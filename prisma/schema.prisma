@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Product {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  manufacturer_barcode String?  @unique
+  size                String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  batches Batch[]
+  units   Unit[]
+
+  @@map("products")
+}
+
+model Batch {
+  id            Int      @id @default(autoincrement())
+  product_id    Int
+  delivery_date DateTime
+  notes         String?
+  created_at    DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [id])
+  units   Unit[]
+
+  @@map("batches")
+}
+
+model Unit {
+  id         String     @id  // HP-2026-000001 format
+  product_id Int
+  batch_id   Int
+  status     UnitStatus @default(IN)
+  location   String?
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+
+  product Product @relation(fields: [product_id], references: [id])
+  batch   Batch   @relation(fields: [batch_id], references: [id])
+
+  scan_events  ScanEvent[]
+  ticket_units TicketUnit[]
+
+  @@map("units")
+}
+
+model ScanEvent {
+  id         Int        @id @default(autoincrement())
+  unit_id    String
+  foreman_id Int?
+  action     UnitStatus
+  scanned_at DateTime   @default(now())
+  note       String?
+
+  unit    Unit     @relation(fields: [unit_id], references: [id])
+  foreman Foreman? @relation(fields: [foreman_id], references: [id], onDelete: SetNull)
+
+  @@map("scan_events")
+}
+
+model Foreman {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  icon       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  scan_events ScanEvent[]
+  tickets     Ticket[]
+
+  @@map("foremen")
+}
+
+model Project {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  tickets Ticket[]
+
+  @@map("projects")
+}
+
+model Ticket {
+  id         Int          @id @default(autoincrement())
+  foreman_id Int
+  project_id Int
+  status     TicketStatus @default(OPEN)
+  opened_at  DateTime     @default(now())
+  closed_at  DateTime?
+  closed_by  String?
+  note       String?
+
+  foreman      Foreman      @relation(fields: [foreman_id], references: [id])
+  project      Project      @relation(fields: [project_id], references: [id])
+  ticket_units TicketUnit[]
+
+  @@map("tickets")
+}
+
+model TicketUnit {
+  id          Int       @id @default(autoincrement())
+  ticket_id   Int
+  unit_id     String
+  returned    Boolean   @default(false)
+  returned_at DateTime?
+
+  ticket Ticket @relation(fields: [ticket_id], references: [id])
+  unit   Unit   @relation(fields: [unit_id], references: [id])
+
+  @@unique([ticket_id, unit_id])
+  @@map("ticket_units")
+}
+
+// Counter used for sequential ID generation
+model IdCounter {
+  id    Int @id @default(autoincrement())
+  year  Int @unique
+  count Int @default(0)
+
+  @@map("id_counters")
+}
+
+enum UnitStatus {
+  IN
+  OUT
+  USED
+}
+
+enum TicketStatus {
+  OPEN
+  CLOSED
+}

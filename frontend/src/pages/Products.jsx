@@ -1,0 +1,123 @@
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { api } from '../api';
+import Feedback from '../components/Feedback';
+
+export default function Products() {
+  const { t } = useTranslation();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ name: '', manufacturer_barcode: '', size: '' });
+  const [feedback, setFeedback] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const loadProducts = () =>
+    api
+      .getProducts()
+      .then(setProducts)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFeedback(null);
+    try {
+      await api.createProduct(form);
+      setFeedback({ type: 'success', message: `${t('products.name')} "${form.name}" ${t('common.save')}.` });
+      setForm({ name: '', manufacturer_barcode: '', size: '' });
+      setShowForm(false);
+      loadProducts();
+    } catch (err) {
+      setFeedback({ type: 'error', message: err.message });
+    }
+  };
+
+  return (
+    <div>
+      <div className="section-header">
+        <h1>{t('products.title')}</h1>
+        <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? t('common.cancel') : t('products.newProduct')}
+        </button>
+      </div>
+
+      {feedback && <Feedback message={feedback.message} type={feedback.type} />}
+
+      {showForm && (
+        <div className="card mt-4">
+          <h2>{t('products.createProduct')}</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>{t('products.productName')} *</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="e.g. Dulux White 15L"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label>{t('products.manufacturerBarcode')}</label>
+              <input
+                value={form.manufacturer_barcode}
+                onChange={(e) => setForm({ ...form, manufacturer_barcode: e.target.value })}
+                placeholder={t('common.cancel')}
+              />
+            </div>
+            <div className="form-group">
+              <label>{t('products.size')}</label>
+              <input
+                value={form.size}
+                onChange={(e) => setForm({ ...form, size: e.target.value })}
+                placeholder="e.g. 15L, 5L"
+              />
+            </div>
+            <button type="submit" className="btn btn-primary">
+              {t('products.createProduct')}
+            </button>
+          </form>
+        </div>
+      )}
+
+      <div className="card mt-4">
+        {loading ? (
+          <p className="text-muted">{t('common.loading')}</p>
+        ) : products.length === 0 ? (
+          <p className="text-muted">{t('products.noProducts')}</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>{t('products.name')}</th>
+                <th>{t('products.barcode')}</th>
+                <th>{t('products.size')}</th>
+                <th>{t('products.units')}</th>
+                <th>{t('products.batches')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((p) => (
+                <tr key={p.id}>
+                  <td className="text-muted">{p.id}</td>
+                  <td>
+                    <strong>{p.name}</strong>
+                  </td>
+                  <td className="monospace">{p.manufacturer_barcode || '—'}</td>
+                  <td>{p.size || '—'}</td>
+                  <td>{p._count?.units ?? 0}</td>
+                  <td>{p._count?.batches ?? 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
