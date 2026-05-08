@@ -159,12 +159,12 @@ export default function Tickets() {
 
   const loadOpen = useCallback(async () => {
     const data = await api.getTickets('OPEN');
-    setOpenTickets(data);
+    setOpenTickets(Array.isArray(data) ? data : []);
   }, []);
 
   const loadClosed = useCallback(async () => {
     const data = await api.getTickets('CLOSED');
-    setClosedTickets(data);
+    setClosedTickets(Array.isArray(data) ? data : []);
   }, []);
 
   useEffect(() => {

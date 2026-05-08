@@ -32,7 +32,7 @@ export default function Dashboard() {
 
       <div className="card">
         <h2>{t('dashboard.recentScans')}</h2>
-        {data.recentScans.length === 0 ? (
+        {(data.recentScans ?? []).length === 0 ? (
           <p className="text-muted">{t('dashboard.noScans')}</p>
         ) : (
           <table>

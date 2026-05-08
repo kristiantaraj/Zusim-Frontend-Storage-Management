@@ -3,6 +3,13 @@
   command = "npm run build"
   publish = "dist"
 
+# Block /api/* so misconfigured API calls get a proper 404 not the SPA HTML
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 404
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
