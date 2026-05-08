@@ -56,8 +56,8 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: 'An unexpected error occurred.' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Zusim Inventory API running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Zusim Inventory API running on port ${PORT}`);
 });
 
 module.exports = app;
