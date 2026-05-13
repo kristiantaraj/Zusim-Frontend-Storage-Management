@@ -2,6 +2,19 @@
   "name": "zusim-frontend",
   "version": "1.0.0",
   "description": "Zusim Paint Inventory Management - Frontend",
+  "browserslist": {
+    "production": [
+      "Android >= 4.4",
+      "iOS >= 10",
+      "Chrome >= 49",
+      "Safari >= 10"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -17,6 +30,7 @@
   "devDependencies": {
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-legacy": "^5.4.1",
     "@vitejs/plugin-react": "^4.3.0",
     "vite": "^5.2.11"
   }
