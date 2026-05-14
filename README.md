@@ -176,6 +176,34 @@ Deploy the `frontend` folder to Netlify with:
 
 The repo already includes `frontend/netlify.toml` for SPA routing.
 
+### 4. Oracle VM frontend auto-deploy (GitHub Actions)
+
+If your frontend is hosted on Oracle VM (`/var/www/zusim` + Nginx), this repository includes a workflow at `.github/workflows/deploy-oracle-frontend.yml` that automatically deploys on each push to `master` when files under `frontend/` change.
+
+One-time setup in GitHub repository settings:
+
+1. Go to **Settings -> Secrets and variables -> Actions -> New repository secret**.
+2. Add these secrets:
+    - `ORACLE_HOST` = your Oracle public IP (example: `158.180.31.164`)
+    - `ORACLE_USER` = `ubuntu`
+    - `ORACLE_SSH_KEY` = private key contents used for SSH (full key text)
+    - `ORACLE_PORT` = `22` (optional but recommended)
+
+One-time setup on the Oracle VM:
+
+1. Ensure the app is cloned at `~/app` and tracks the same GitHub repo.
+2. Ensure Node/NPM are installed and `npm ci` works in `~/app/frontend`.
+3. Allow passwordless sudo for deploy commands used by the workflow (`mkdir`, `rm`, `cp`, `nginx -t`, `systemctl reload nginx`) or configure equivalent permissions for the deploy user.
+
+What the workflow does on each deploy:
+
+1. `git pull --ff-only origin master`
+2. `cd frontend && npm ci && npm run build`
+3. Copies `frontend/dist/*` to `/var/www/zusim/`
+4. Validates and reloads Nginx
+
+You can also run it manually from GitHub via **Actions -> Deploy Frontend To Oracle -> Run workflow**.
+
 ---
 
 ## API Reference
