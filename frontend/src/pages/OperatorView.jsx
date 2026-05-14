@@ -7,7 +7,7 @@ import { api } from '../api';
 
 export default function OperatorView() {
   const { t, i18n } = useTranslation();
-  const { setRole } = useRole();
+  const { logout } = useRole();
   const navigate = useNavigate();
   const [foremen, setForemen] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -25,7 +25,7 @@ export default function OperatorView() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleLogout = () => { setRole(null); navigate('/'); };
+  const handleLogout = () => { logout(); navigate('/'); };
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'pl' : 'en');
   };

@@ -1,15 +1,37 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import { useRole } from '../context/RoleContext';
 
 export default function RoleSelector() {
   const { t } = useTranslation();
-  const { setRole } = useRole();
+  const { selectOperator, unlockManager } = useRole();
   const navigate = useNavigate();
+  const [managerPassword, setManagerPassword] = useState('');
+  const [error, setError] = useState('');
 
   const selectRole = (selectedRole) => {
-    setRole(selectedRole);
-    navigate(selectedRole === 'operator' ? '/operator' : '/');
+    if (selectedRole === 'operator') {
+      selectOperator();
+      navigate('/operator');
+      return;
+    }
+
+    const result = unlockManager(managerPassword);
+
+    if (result.ok) {
+      setError('');
+      setManagerPassword('');
+      navigate('/');
+      return;
+    }
+
+    if (result.reason === 'missing-config') {
+      setError(t('roles.managerPasswordMissingConfig'));
+      return;
+    }
+
+    setError(t('roles.managerPasswordInvalid'));
   };
 
   return (
@@ -18,6 +40,30 @@ export default function RoleSelector() {
         <div style={{ fontSize: 32, marginBottom: 16 }}>Zusim Inventory</div>
         <h1 style={{ marginBottom: 8 }}>{t('roles.selectRole')}</h1>
         <p className="text-muted" style={{ marginBottom: 32 }}>{t('roles.selectRoleDesc')}</p>
+
+        <div style={{ marginBottom: 20, textAlign: 'left' }}>
+          <label htmlFor="manager-password" className="text-muted" style={{ display: 'block', marginBottom: 6 }}>
+            {t('roles.managerPasswordLabel')}
+          </label>
+          <input
+            id="manager-password"
+            type="password"
+            value={managerPassword}
+            onChange={(e) => setManagerPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                selectRole('manager');
+              }
+            }}
+            placeholder={t('roles.managerPasswordPlaceholder')}
+            style={{ width: '100%' }}
+          />
+          {error && (
+            <div style={{ marginTop: 8, color: 'var(--danger)', fontSize: 13 }}>
+              {error}
+            </div>
+          )}
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <button

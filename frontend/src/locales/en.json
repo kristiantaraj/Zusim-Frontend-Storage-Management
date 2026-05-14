@@ -27,7 +27,11 @@
     "manager": "Manager",
     "operator": "Operator",
     "selectRole": "Select Your Role",
-    "selectRoleDesc": "Choose your role to continue"
+    "selectRoleDesc": "Choose your role to continue",
+    "managerPasswordLabel": "Manager Password",
+    "managerPasswordPlaceholder": "Enter manager password",
+    "managerPasswordInvalid": "Incorrect manager password.",
+    "managerPasswordMissingConfig": "Manager password is not configured. Set VITE_MANAGER_PASSWORD in frontend environment."
   },
   "dashboard": {
     "title": "Dashboard",

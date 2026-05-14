@@ -137,6 +137,9 @@ FRONTEND_URLS="http://localhost:5173,https://your-site.netlify.app"
 ```env
 # Local dev: optional (uses /api proxy by default)
 VITE_API_BASE_URL="https://your-backend-domain.com"
+
+# Required to unlock Manager role in Role Selector
+VITE_MANAGER_PASSWORD="change-me"
 ```
 
 ---

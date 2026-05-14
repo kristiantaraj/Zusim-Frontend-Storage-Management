@@ -4,7 +4,7 @@ import { useRole } from '../context/RoleContext';
 
 export default function Sidebar() {
   const { t, i18n } = useTranslation();
-  const { setRole } = useRole();
+  const { logout } = useRole();
   const navigate = useNavigate();
 
   const links = [
@@ -24,7 +24,7 @@ export default function Sidebar() {
   };
 
   const handleLogout = () => {
-    setRole(null);
+    logout();
     navigate('/');
   };
 

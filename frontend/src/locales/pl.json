@@ -27,7 +27,11 @@
     "manager": "Menedżer",
     "operator": "Operator",
     "selectRole": "Wybierz swoją rolę",
-    "selectRoleDesc": "Wybierz swoją rolę, aby kontynuować"
+    "selectRoleDesc": "Wybierz swoją rolę, aby kontynuować",
+    "managerPasswordLabel": "Hasło menedżera",
+    "managerPasswordPlaceholder": "Wpisz hasło menedżera",
+    "managerPasswordInvalid": "Nieprawidłowe hasło menedżera.",
+    "managerPasswordMissingConfig": "Hasło menedżera nie jest skonfigurowane. Ustaw VITE_MANAGER_PASSWORD w środowisku frontendu."
   },
   "dashboard": {
     "title": "Pulpit",
