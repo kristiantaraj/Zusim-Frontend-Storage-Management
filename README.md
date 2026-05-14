@@ -191,6 +191,7 @@ One-time setup in GitHub repository settings:
     - `ORACLE_USER` = `ubuntu`
     - `ORACLE_SSH_KEY` = private key contents used for SSH (full key text)
     - `ORACLE_PORT` = `22` (optional but recommended)
+    - `VITE_MANAGER_PASSWORD` = manager login password for frontend builds
 
 One-time setup on the Oracle VM:
 
