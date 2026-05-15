@@ -42,9 +42,9 @@ export default function OperatorView() {
     : 'scan';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div className="operator-view" style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Top bar */}
-      <div style={{
+      <div className="operator-topbar" style={{
         background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',
         padding: '12px 24px',
@@ -52,10 +52,10 @@ export default function OperatorView() {
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--primary)' }}>
+        <div className="operator-brand" style={{ fontSize: 18, fontWeight: 700, color: 'var(--primary)' }}>
           Zusim — {t('roles.operator')}
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div className="operator-topbar-actions" style={{ display: 'flex', gap: 12 }}>
           <button className="btn btn-ghost" onClick={toggleLanguage}>
             {i18n.language === 'en' ? '🇵🇱 PL' : '🇬🇧 EN'}
           </button>
@@ -65,17 +65,17 @@ export default function OperatorView() {
         </div>
       </div>
 
-      <div style={{ padding: '32px 24px' }}>
+      <div className="operator-content" style={{ padding: '32px 24px' }}>
 
         {/* Step 0 — Choose mode */}
         {step === 'mode' && (
-          <div className="card" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
+          <div className="card operator-step-card" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
             <h1 style={{ marginBottom: 8 }}>{t('operator.chooseMode')}</h1>
             <p className="text-muted" style={{ marginBottom: 28 }}>{t('operator.chooseModeDesc')}</p>
-            <div style={{ display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="operator-mode-grid" style={{ display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                className="foreman-tile"
+                className="foreman-tile operator-mode-tile"
                 style={{ minWidth: 160, padding: '24px 32px' }}
                 onClick={() => setMode('out')}
               >
@@ -84,7 +84,7 @@ export default function OperatorView() {
               </button>
               <button
                 type="button"
-                className="foreman-tile"
+                className="foreman-tile operator-mode-tile"
                 style={{ minWidth: 160, padding: '24px 32px' }}
                 onClick={() => setMode('in')}
               >
@@ -97,8 +97,8 @@ export default function OperatorView() {
 
         {/* Step 1 — Select Foreman */}
         {step === 'foreman' && (
-          <div className="card" style={{ maxWidth: 860, margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div className="card operator-step-card" style={{ maxWidth: 860, margin: '0 auto' }}>
+            <div className="operator-step-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <h1 style={{ margin: 0 }}>{t('foremen.pickBeforeScan')}</h1>
               <button className="btn btn-ghost" type="button" onClick={resetAll}>
                 ← {t('operator.changeScanType')}
@@ -131,8 +131,8 @@ export default function OperatorView() {
 
         {/* Step 2 — Select Project (OUT only) */}
         {step === 'project' && (
-          <div className="card" style={{ maxWidth: 860, margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div className="card operator-step-card" style={{ maxWidth: 860, margin: '0 auto' }}>
+            <div className="operator-step-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <h1 style={{ margin: 0 }}>{t('projects.pickBeforeScan')}</h1>
               <button className="btn btn-ghost" type="button" onClick={resetForeman}>
                 {t('operator.changeForeman')}
@@ -169,8 +169,8 @@ export default function OperatorView() {
         {/* Step 3 — Scan */}
         {step === 'scan' && (
           <>
-            <div className="card" style={{ maxWidth: 640, margin: '0 auto 14px auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div className="card operator-step-card" style={{ maxWidth: 640, margin: '0 auto 14px auto' }}>
+              <div className="operator-scan-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <div>
                   {mode === 'out' && (
                     <div><strong>{t('foremen.activeForeman')}:</strong> {selectedForeman.icon || '👷'} {selectedForeman.name}</div>
@@ -179,7 +179,7 @@ export default function OperatorView() {
                     <div style={{ marginTop: 4 }}><strong>{t('projects.activeProject')}:</strong> 📁 {selectedProject.name}</div>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="operator-scan-actions" style={{ display: 'flex', gap: 8 }}>
                   {mode === 'out' && (
                     <button className="btn btn-ghost" type="button" onClick={resetProject}>
                       {t('operator.changeProject')}

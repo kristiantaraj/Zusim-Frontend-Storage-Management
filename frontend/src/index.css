@@ -226,6 +226,160 @@ tr:hover td { background: var(--bg); }
   color: var(--text);
 }
 
+/* ── Operator view (small handheld focused) ─────────────────────────────── */
+.operator-view .scan-container {
+  max-width: 680px;
+}
+
+.operator-view .scan-container input.large {
+  font-size: 24px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 430px) {
+  .operator-view {
+    min-height: 100dvh;
+  }
+
+  .operator-topbar {
+    padding: 8px 10px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-start !important;
+  }
+
+  .operator-brand {
+    font-size: 15px !important;
+    line-height: 1.2;
+  }
+
+  .operator-topbar-actions {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px !important;
+  }
+
+  .operator-topbar-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 10px;
+    min-height: 40px;
+  }
+
+  .operator-content {
+    padding: 12px 10px !important;
+  }
+
+  .operator-step-card {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .operator-step-card h1 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .operator-step-header {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px;
+  }
+
+  .operator-step-header .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .operator-mode-grid {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 10px !important;
+  }
+
+  .operator-mode-tile {
+    min-width: 0 !important;
+    width: 100%;
+    padding: 14px 12px !important;
+  }
+
+  .foreman-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .foreman-tile {
+    min-height: 64px;
+    padding: 10px 12px;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+
+  .foreman-tile-icon {
+    font-size: 24px;
+  }
+
+  .foreman-tile-name {
+    font-size: 14px;
+  }
+
+  .operator-scan-meta {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .operator-scan-actions {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 8px !important;
+  }
+
+  .operator-scan-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .operator-view .scan-container {
+    max-width: 100%;
+  }
+
+  .operator-view .scan-container h1 {
+    font-size: 19px;
+    margin-bottom: 10px;
+    line-height: 1.2;
+  }
+
+  .operator-view .scan-container .text-muted {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .operator-view .scan-container input.large {
+    font-size: 20px;
+    padding: 11px 12px;
+    letter-spacing: 0.4px;
+  }
+
+  .operator-view .scan-history {
+    margin-top: 14px;
+  }
+
+  .operator-view .scan-history-item {
+    padding: 8px 10px;
+    gap: 8px;
+    font-size: 13px;
+    align-items: flex-start;
+  }
+}
+
 /* ── Misc ─────────────────────────────────────────────────────────────────── */
 .row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .mt-4 { margin-top: 16px; }
