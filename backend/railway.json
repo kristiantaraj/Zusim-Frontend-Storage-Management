@@ -8,6 +8,6 @@
     "startCommand": "node src/index.js",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE",
-    "preDeployCommand": "npx prisma migrate deploy"
+    "preDeployCommand": "if [ -n \"$DIRECT_URL\" ]; then export DATABASE_URL=\"$DIRECT_URL\"; fi; npx prisma migrate deploy"
   }
 }
