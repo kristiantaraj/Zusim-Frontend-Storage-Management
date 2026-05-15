@@ -122,24 +122,42 @@ router.get('/', async (_req, res) => {
       }), []),
     ]);
 
-    const topProductUnitIds = topProducts.map((x) => x.unit_id);
+    const safeTopProducts = Array.isArray(topProducts) ? topProducts : [];
+    const safeForemanActivity = Array.isArray(foremanActivity) ? foremanActivity : [];
+    const safeProjectActivity = Array.isArray(projectActivity) ? projectActivity : [];
+    const safeStaleOutUnits = Array.isArray(staleOutUnits) ? staleOutUnits : [];
+    const safeLongOpenTickets = Array.isArray(longOpenTickets) ? longOpenTickets : [];
+    const safeLowStock = Array.isArray(lowStock) ? lowStock : [];
+    const safeRecentScans = Array.isArray(recentScans) ? recentScans : [];
+
+    const topProductUnitIds = safeTopProducts.map((x) => x.unit_id).filter(Boolean);
     const unitMeta = topProductUnitIds.length
-      ? await prisma.unit.findMany({
-          where: { id: { in: topProductUnitIds } },
-          include: { product: { select: { id: true, name: true } } },
-        })
+      ? await safeQuery(
+          () =>
+            prisma.unit.findMany({
+              where: { id: { in: topProductUnitIds } },
+              include: { product: { select: { id: true, name: true } } },
+            }),
+          []
+        )
       : [];
     const unitMetaMap = new Map(unitMeta.map((u) => [u.id, u.product?.name || 'Unknown']));
 
-    const foremanIds = foremanActivity.map((x) => x.foreman_id);
+    const foremanIds = safeForemanActivity.map((x) => x.foreman_id).filter((id) => id !== null && id !== undefined);
     const foremen = foremanIds.length
-      ? await prisma.foreman.findMany({ where: { id: { in: foremanIds } }, select: { id: true, name: true, icon: true } })
+      ? await safeQuery(
+          () => prisma.foreman.findMany({ where: { id: { in: foremanIds } }, select: { id: true, name: true, icon: true } }),
+          []
+        )
       : [];
     const foremanMap = new Map(foremen.map((f) => [f.id, f]));
 
-    const projectIds = projectActivity.map((x) => x.project_id);
+    const projectIds = safeProjectActivity.map((x) => x.project_id).filter((id) => id !== null && id !== undefined);
     const projects = projectIds.length
-      ? await prisma.project.findMany({ where: { id: { in: projectIds } }, select: { id: true, name: true } })
+      ? await safeQuery(
+          () => prisma.project.findMany({ where: { id: { in: projectIds } }, select: { id: true, name: true } }),
+          []
+        )
       : [];
     const projectMap = new Map(projects.map((p) => [p.id, p.name]));
 
@@ -150,22 +168,22 @@ router.get('/', async (_req, res) => {
       inCount,
       outCount,
       usedCount,
-      recentScans,
+      recentScans: safeRecentScans,
       alerts: {
-        staleOutUnits: staleOutUnits.map((u) => ({
+        staleOutUnits: safeStaleOutUnits.map((u) => ({
           id: u.id,
           product: u.product?.name || null,
           since: u.updated_at,
         })),
-        longOpenTickets: longOpenTickets.map((t) => ({
+        longOpenTickets: safeLongOpenTickets.map((t) => ({
           id: t.id,
           opened_at: t.opened_at,
           foreman: t.foreman,
           project: t.project,
-          pending_units: t.ticket_units.filter((u) => !u.returned).length,
+          pending_units: Array.isArray(t.ticket_units) ? t.ticket_units.filter((u) => !u.returned).length : 0,
         })),
-        lowStockProducts: lowStock
-          .filter((p) => p.units.length <= 3)
+        lowStockProducts: safeLowStock
+          .filter((p) => Array.isArray(p.units) && p.units.length <= 3)
           .map((p) => ({ id: p.id, name: p.name, in_stock: p.units.length })),
       },
       trends: {
@@ -186,22 +204,22 @@ router.get('/', async (_req, res) => {
         },
       },
       insights: {
-        topProducts: topProducts
+        topProducts: safeTopProducts
           .map((x) => ({
             product: unitMetaMap.get(x.unit_id) || 'Unknown',
-            count: x._count.unit_id,
+            count: x._count?.unit_id || 0,
           }))
           .slice(0, 8),
-        foremen: foremanActivity.map((x) => ({
+        foremen: safeForemanActivity.map((x) => ({
           id: x.foreman_id,
           name: foremanMap.get(x.foreman_id)?.name || 'Unknown',
           icon: foremanMap.get(x.foreman_id)?.icon || null,
-          tickets: x._count.foreman_id,
+          tickets: x._count?.foreman_id || 0,
         })),
-        projects: projectActivity.map((x) => ({
+        projects: safeProjectActivity.map((x) => ({
           id: x.project_id,
           name: projectMap.get(x.project_id) || 'Unknown',
-          tickets: x._count.project_id,
+          tickets: x._count?.project_id || 0,
         })),
       },
     });
