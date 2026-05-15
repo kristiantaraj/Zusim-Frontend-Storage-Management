@@ -27,7 +27,14 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
+
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            chmod 600 ~/.ssh/known_hosts
+
             cd ~/app
+            git remote set-url origin git@github.com:kristiantaraj/Zusim-Frontend-Storage-Management.git
             git fetch origin
             git pull --ff-only origin master
 
