@@ -12,10 +12,12 @@ const validate = (req, res, next) => {
   next();
 };
 
-// GET /foremen - list all foremen
+// GET /foremen - list foremen (active by default)
 router.get('/', async (_req, res) => {
+  const includeInactive = _req.query.include_inactive === '1';
   try {
     const foremen = await prisma.foreman.findMany({
+      where: includeInactive ? {} : { is_active: true },
       orderBy: { name: 'asc' },
     });
     res.json(foremen);
@@ -54,7 +56,7 @@ router.post(
   }
 );
 
-// DELETE /foremen/:id - remove a foreman (scan history keeps data nullable)
+// DELETE /foremen/:id - archive a foreman (soft delete)
 router.delete('/:id', async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (Number.isNaN(id)) {
@@ -62,14 +64,44 @@ router.delete('/:id', async (req, res) => {
   }
 
   try {
-    await prisma.foreman.delete({ where: { id } });
-    res.status(204).send();
+    const openTickets = await prisma.ticket.count({ where: { foreman_id: id, status: 'OPEN' } });
+    if (openTickets > 0) {
+      return res.status(409).json({ error: 'Cannot archive foreman with open tickets.', code: 'HAS_OPEN_TICKETS' });
+    }
+
+    const archived = await prisma.foreman.update({
+      where: { id },
+      data: { is_active: false, deleted_at: new Date() },
+    });
+    res.json(archived);
   } catch (err) {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Foreman not found.' });
     }
     console.error(err);
     res.status(500).json({ error: 'Failed to delete foreman.' });
+  }
+});
+
+// POST /foremen/:id/restore - restore archived foreman
+router.post('/:id/restore', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid foreman ID.' });
+  }
+
+  try {
+    const restored = await prisma.foreman.update({
+      where: { id },
+      data: { is_active: true, deleted_at: null },
+    });
+    res.json(restored);
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: 'Foreman not found.' });
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Failed to restore foreman.' });
   }
 });
 

@@ -16,6 +16,8 @@ model Product {
   name                String
   manufacturer_barcode String?  @unique
   size                String?
+  is_active           Boolean  @default(true)
+  deleted_at          DateTime?
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
@@ -52,6 +54,7 @@ model Unit {
 
   scan_events  ScanEvent[]
   ticket_units TicketUnit[]
+  print_jobs   PrintJob[]
 
   @@map("units")
 }
@@ -74,6 +77,8 @@ model Foreman {
   id         Int      @id @default(autoincrement())
   name       String   @unique
   icon       String?
+  is_active  Boolean  @default(true)
+  deleted_at DateTime?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -86,6 +91,8 @@ model Foreman {
 model Project {
   id         Int      @id @default(autoincrement())
   name       String   @unique
+  is_active  Boolean  @default(true)
+  deleted_at DateTime?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -134,6 +141,19 @@ model IdCounter {
   @@map("id_counters")
 }
 
+model PrintJob {
+  id          Int             @id @default(autoincrement())
+  unit_id     String
+  status      PrintJobStatus  @default(FAILED)
+  error       String?
+  requested_by String?
+  created_at  DateTime        @default(now())
+
+  unit Unit @relation(fields: [unit_id], references: [id])
+
+  @@map("print_jobs")
+}
+
 enum UnitStatus {
   IN
   OUT
@@ -143,4 +163,9 @@ enum UnitStatus {
 enum TicketStatus {
   OPEN
   CLOSED
+}
+
+enum PrintJobStatus {
+  SUCCESS
+  FAILED
 }

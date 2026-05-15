@@ -39,10 +39,12 @@ router.post(
   }
 );
 
-// GET /products - list all products
+// GET /products - list products (active by default)
 router.get('/', async (req, res) => {
+  const includeInactive = req.query.include_inactive === '1';
   try {
     const products = await prisma.product.findMany({
+      where: includeInactive ? {} : { is_active: true },
       orderBy: { created_at: 'desc' },
       include: {
         _count: { select: { units: true, batches: true } },
@@ -69,6 +71,53 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch product.' });
+  }
+});
+
+// DELETE /products/:id - soft delete product
+router.delete('/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid product ID.' });
+
+  try {
+    const openOutUnits = await prisma.unit.count({
+      where: { product_id: id, status: 'OUT' },
+    });
+
+    if (openOutUnits > 0) {
+      return res.status(409).json({
+        error: 'Cannot archive product with units currently OUT.',
+        code: 'HAS_OUT_UNITS',
+      });
+    }
+
+    const updated = await prisma.product.update({
+      where: { id },
+      data: { is_active: false, deleted_at: new Date() },
+    });
+    res.json(updated);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Product not found.' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to archive product.' });
+  }
+});
+
+// POST /products/:id/restore - restore archived product
+router.post('/:id/restore', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid product ID.' });
+
+  try {
+    const restored = await prisma.product.update({
+      where: { id },
+      data: { is_active: true, deleted_at: null },
+    });
+    res.json(restored);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Product not found.' });
+    console.error(err);
+    res.status(500).json({ error: 'Failed to restore product.' });
   }
 });
 
