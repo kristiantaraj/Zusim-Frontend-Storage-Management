@@ -9,6 +9,16 @@ const daysAgo = (days) => {
   return d;
 };
 
+const safeQuery = async (queryFn, fallback) => {
+  try {
+    return await queryFn();
+  } catch (err) {
+    console.error('[dashboard] query failed:', err?.code || 'NO_CODE', err?.message || err);
+    if (typeof fallback === 'function') return fallback(err);
+    return fallback;
+  }
+};
+
 // GET /dashboard - summary counts + alerts + insights
 router.get('/', async (_req, res) => {
   try {
@@ -37,26 +47,26 @@ router.get('/', async (_req, res) => {
       foremanActivity,
       projectActivity,
     ] = await Promise.all([
-      prisma.product.count({ where: { is_active: true } }),
-      prisma.batch.count(),
-      prisma.unit.count(),
-      prisma.unit.count({ where: { status: 'IN' } }),
-      prisma.unit.count({ where: { status: 'OUT' } }),
-      prisma.unit.count({ where: { status: 'USED' } }),
-      prisma.scanEvent.findMany({
+      safeQuery(() => prisma.product.count({ where: { is_active: true } }), () => prisma.product.count()),
+      safeQuery(() => prisma.batch.count(), 0),
+      safeQuery(() => prisma.unit.count(), 0),
+      safeQuery(() => prisma.unit.count({ where: { status: 'IN' } }), 0),
+      safeQuery(() => prisma.unit.count({ where: { status: 'OUT' } }), 0),
+      safeQuery(() => prisma.unit.count({ where: { status: 'USED' } }), 0),
+      safeQuery(() => prisma.scanEvent.findMany({
         take: 10,
         orderBy: { scanned_at: 'desc' },
         include: {
           unit: { include: { product: { select: { name: true } } } },
         },
-      }),
-      prisma.unit.findMany({
+      }), []),
+      safeQuery(() => prisma.unit.findMany({
         where: { status: 'OUT', updated_at: { lte: daysAgo(5) } },
         take: 20,
         orderBy: { updated_at: 'asc' },
         include: { product: { select: { name: true } } },
-      }),
-      prisma.ticket.findMany({
+      }), []),
+      safeQuery(() => prisma.ticket.findMany({
         where: { status: 'OPEN', opened_at: { lte: daysAgo(3) } },
         take: 20,
         orderBy: { opened_at: 'asc' },
@@ -65,8 +75,8 @@ router.get('/', async (_req, res) => {
           project: { select: { name: true } },
           ticket_units: { select: { id: true, returned: true } },
         },
-      }),
-      prisma.product.findMany({
+      }), []),
+      safeQuery(() => prisma.product.findMany({
         where: { is_active: true },
         include: {
           units: {
@@ -74,34 +84,42 @@ router.get('/', async (_req, res) => {
             select: { id: true },
           },
         },
-      }),
-      prisma.scanEvent.count({ where: { action: 'OUT', scanned_at: { gte: sevenDaysAgo, lte: now } } }),
-      prisma.scanEvent.count({ where: { action: 'IN', scanned_at: { gte: sevenDaysAgo, lte: now } } }),
-      prisma.scanEvent.count({ where: { action: 'USED', scanned_at: { gte: sevenDaysAgo, lte: now } } }),
-      prisma.scanEvent.count({ where: { action: 'OUT', scanned_at: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }),
-      prisma.scanEvent.count({ where: { action: 'IN', scanned_at: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }),
-      prisma.scanEvent.count({ where: { action: 'USED', scanned_at: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }),
-      prisma.scanEvent.groupBy({
+      }), () =>
+        prisma.product.findMany({
+          include: {
+            units: {
+              where: { status: 'IN' },
+              select: { id: true },
+            },
+          },
+        })),
+      safeQuery(() => prisma.scanEvent.count({ where: { action: 'OUT', scanned_at: { gte: sevenDaysAgo, lte: now } } }), 0),
+      safeQuery(() => prisma.scanEvent.count({ where: { action: 'IN', scanned_at: { gte: sevenDaysAgo, lte: now } } }), 0),
+      safeQuery(() => prisma.scanEvent.count({ where: { action: 'USED', scanned_at: { gte: sevenDaysAgo, lte: now } } }), 0),
+      safeQuery(() => prisma.scanEvent.count({ where: { action: 'OUT', scanned_at: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }), 0),
+      safeQuery(() => prisma.scanEvent.count({ where: { action: 'IN', scanned_at: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }), 0),
+      safeQuery(() => prisma.scanEvent.count({ where: { action: 'USED', scanned_at: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }), 0),
+      safeQuery(() => prisma.scanEvent.groupBy({
         by: ['unit_id'],
         where: { action: 'OUT', scanned_at: { gte: sevenDaysAgo, lte: now } },
         _count: { unit_id: true },
         orderBy: { _count: { unit_id: 'desc' } },
         take: 30,
-      }),
-      prisma.ticket.groupBy({
+      }), []),
+      safeQuery(() => prisma.ticket.groupBy({
         by: ['foreman_id'],
         where: { opened_at: { gte: sevenDaysAgo, lte: now } },
         _count: { foreman_id: true },
         orderBy: { _count: { foreman_id: 'desc' } },
         take: 8,
-      }),
-      prisma.ticket.groupBy({
+      }), []),
+      safeQuery(() => prisma.ticket.groupBy({
         by: ['project_id'],
         where: { opened_at: { gte: sevenDaysAgo, lte: now } },
         _count: { project_id: true },
         orderBy: { _count: { project_id: 'desc' } },
         take: 8,
-      }),
+      }), []),
     ]);
 
     const topProductUnitIds = topProducts.map((x) => x.unit_id);
