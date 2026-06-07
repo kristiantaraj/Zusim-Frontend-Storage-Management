@@ -44,13 +44,13 @@ export function generateZpl({
     `^FD${safeId}^FS`,
     ...(safeName ? [`^FO${x(30)},${y(90)}^A0N,${sz(28)},${sz(28)}^FD${safeName}^FS`] : []),
     ...(safeDate ? [`^FO${x(30)},${y(125)}^A0N,${sz(22)},${sz(22)}^FDBatch: ${safeDate}^FS`] : []),
-    `^FO${x(30)},${y(160)}^BY${Math.max(1, Math.round(scaleX * 2))},${Math.max(1, Math.round(2 * scale))},${Math.max(1, Math.round(60 * scaleY))}`,
-    `^BCN,${Math.max(30, Math.round(60 * scaleY))},Y,N,N`,
-    `^FD>;${safeId}^FS`,
+    `^FO${x(30)},${y(160)}^BY${Math.max(2, Math.round(scaleX * 2))},${Math.max(1, Math.round(2 * scale))},${Math.max(30, Math.round(80 * scaleY))}`,
+    `^BCN,${Math.max(30, Math.round(80 * scaleY))},Y,N,N`,
+    `^FD${safeId}^FS`,
     `^FO${x(460)},${y(20)}`,
     `^BQN,2,${qrModule}`,
     `^FDQA,${safeId}^FS`,
-    `^FO${x(20)},${y(175)}^GB${Math.max(1, x(760))},${Math.max(1, sz(3))},${Math.max(1, sz(3))}^FS`,
+    `^FO${x(20)},${y(280)}^GB${Math.max(1, x(760))},${Math.max(1, sz(3))},${Math.max(1, sz(3))}^FS`,
     '^XZ',
   ].join('\n');
 }

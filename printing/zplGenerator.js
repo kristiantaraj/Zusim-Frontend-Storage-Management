@@ -37,9 +37,9 @@ function generateZpl({ unitId, productName = '', batchDate = '' }) {
       : []),
 
     // Code128 barcode - encodes the unit ID
-    '^FO30,160^BY2,2,60',
-    '^BCN,60,Y,N,N',
-    `^FD>;${safeId}^FS`,
+    '^FO30,160^BY2,2,80',
+    '^BCN,80,Y,N,N',
+    `^FD${safeId}^FS`,
 
     // QR Code - encodes the unit ID
     '^FO460,20',
@@ -47,7 +47,7 @@ function generateZpl({ unitId, productName = '', batchDate = '' }) {
     `^FDQA,${safeId}^FS`,
 
     // Bottom border line
-    '^FO20,175^GB760,3,3^FS',
+    '^FO20,280^GB760,3,3^FS',
 
     '^XZ',
   ].join('\n');
