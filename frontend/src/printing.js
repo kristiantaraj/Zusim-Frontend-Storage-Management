@@ -56,18 +56,149 @@ export function generateBatchZpl(units, labelConfig = {}) {
   return units.map((u) => generateZpl({ ...u, ...labelConfig })).join('\n');
 }
 
+const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1'];
+const LOCAL_BROWSERPRINT_SCRIPT_URLS = [
+  'https://localhost:9101/BrowserPrint-3.1.250.min.js',
+  'https://localhost:9101/BrowserPrint-3.0.216.min.js',
+  'http://localhost:9100/BrowserPrint-3.1.250.min.js',
+  'http://localhost:9100/BrowserPrint-3.0.216.min.js',
+];
+
+let browserPrintInitPromise = null;
+
+const isLocalhostRuntime = () => LOCAL_HOSTNAMES.includes(window.location.hostname);
+
+function toFriendlyBrowserPrintError(error, fallbackMessage) {
+  const message = String(error?.message || error || '');
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('more-private address space') ||
+    lower.includes('private network access') ||
+    lower.includes('network_access_denied') ||
+    lower.includes('err_failed') ||
+    lower.includes('failed to fetch')
+  ) {
+    return new Error(
+      'Chrome blocked Local Network Access to Zebra Browser Print. Open the app over HTTPS, then allow local network access for this site in Chrome Site Settings.'
+    );
+  }
+  return new Error(fallbackMessage || message || 'Browser Print request failed.');
+}
+
+async function injectBrowserPrintScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-browserprint-src="${src}"]`);
+    if (existing) {
+      if (window.BrowserPrint) return resolve();
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error(`Failed loading ${src}`)), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.dataset.browserprintSrc = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed loading ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureBrowserPrintSdk() {
+  if (window.BrowserPrint) return true;
+
+  for (const src of LOCAL_BROWSERPRINT_SCRIPT_URLS) {
+    try {
+      console.log('[BrowserPrint] Attempting SDK load from', src);
+      await injectBrowserPrintScript(src);
+      if (window.BrowserPrint) {
+        console.log('[BrowserPrint] SDK loaded from', src);
+        return true;
+      }
+    } catch (error) {
+      console.warn('[BrowserPrint] SDK load failed from', src, error);
+    }
+  }
+
+  console.warn('[BrowserPrint] SDK global unavailable, will try direct local API fallback');
+  return false;
+}
+
+function initializeBrowserPrint() {
+  if (window.zebraPrinter) {
+    console.log('[BrowserPrint] Reusing cached printer', window.zebraPrinter);
+    return Promise.resolve(window.zebraPrinter);
+  }
+
+  if (browserPrintInitPromise) return browserPrintInitPromise;
+
+  browserPrintInitPromise = new Promise((resolve, reject) => {
+    if (!window.BrowserPrint) {
+      reject(new Error('BrowserPrint SDK is not available in this page.'));
+      return;
+    }
+
+    console.log('[BrowserPrint] Initializing BrowserPrint.getDefaultDevice(...)');
+    window.BrowserPrint.getDefaultDevice(
+      'printer',
+      function(printer) {
+        window.zebraPrinter = printer;
+        console.log('Printer found:', printer);
+        resolve(printer);
+      },
+      function(error) {
+        console.error('BrowserPrint error:', error);
+        reject(toFriendlyBrowserPrintError(error, `BrowserPrint initialization failed: ${String(error)}`));
+      }
+    );
+  }).catch((error) => {
+    browserPrintInitPromise = null;
+    throw error;
+  });
+
+  return browserPrintInitPromise;
+}
+
+async function printWithBrowserPrintSdk(zpl) {
+  const printer = await initializeBrowserPrint();
+
+  console.log('[BrowserPrint] Sending ZPL using BrowserPrint SDK', {
+    zplLength: zpl.length,
+    printerName: printer?.name || printer?.uid || 'unknown',
+  });
+
+  return new Promise((resolve, reject) => {
+    printer.send(
+      zpl,
+      () => {
+        console.log('[BrowserPrint] SDK send completed successfully');
+        resolve();
+      },
+      (error) => {
+        console.error('[BrowserPrint] SDK send failed', error);
+        reject(toFriendlyBrowserPrintError(error, `BrowserPrint send error: ${String(error)}`));
+      }
+    );
+  });
+}
+
 async function fetchAvailableLocalPrinters() {
   const endpoints = ['http://localhost:9100/available', 'https://localhost:9101/available'];
 
   for (const endpoint of endpoints) {
     try {
+      console.log('[BrowserPrint] Checking local printers via', endpoint);
       const res = await fetch(endpoint);
       if (!res.ok) continue;
       const data = await res.json();
       const printers = Array.isArray(data?.printer) ? data.printer : [];
-      if (printers.length) return printers;
-    } catch {
-      // Try next endpoint.
+      if (printers.length) {
+        console.log('[BrowserPrint] Local printers discovered', printers);
+        return printers;
+      }
+    } catch (error) {
+      console.warn('[BrowserPrint] Local printer discovery failed for', endpoint, error);
     }
   }
 
@@ -75,12 +206,12 @@ async function fetchAvailableLocalPrinters() {
 }
 
 async function printWithLocalBrowserPrintApi(zpl) {
-  const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-  if (!window.isSecureContext && !isLocalHost) {
-    throw new Error(
-      'Browser security blocked access to local Browser Print service from an insecure HTTP site. Open this app via HTTPS (recommended) or run it locally on localhost.'
-    );
-  }
+  console.log('[BrowserPrint] Using direct local Browser Print API fallback', {
+    origin: window.location.origin,
+    secureContext: window.isSecureContext,
+    isLocalhost: isLocalhostRuntime(),
+    zplLength: zpl.length,
+  });
 
   const printers = await fetchAvailableLocalPrinters();
   if (!printers.length) {
@@ -99,6 +230,7 @@ async function printWithLocalBrowserPrintApi(zpl) {
 
   for (const endpoint of writeEndpoints) {
     try {
+      console.log('[BrowserPrint] Sending ZPL via local endpoint', endpoint);
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,16 +239,19 @@ async function printWithLocalBrowserPrintApi(zpl) {
 
       if (!res.ok) {
         lastError = new Error(`Browser Print write failed: HTTP ${res.status}`);
+        console.warn('[BrowserPrint] Local write endpoint failed', endpoint, res.status);
         continue;
       }
 
+      console.log('[BrowserPrint] Local write succeeded via', endpoint);
       return;
     } catch (err) {
       lastError = err;
+      console.warn('[BrowserPrint] Local write threw error', endpoint, err);
     }
   }
 
-  throw lastError || new Error('Browser Print write failed.');
+  throw toFriendlyBrowserPrintError(lastError, 'Browser Print local write failed.');
 }
 
 /**
@@ -127,22 +262,22 @@ async function printWithLocalBrowserPrintApi(zpl) {
  */
 export function printWithBrowserPrint(zpl) {
   return new Promise((resolve, reject) => {
-    // Preferred: SDK global if available.
-    if (window.BrowserPrint) {
-      window.BrowserPrint.getDefaultDevice(
-        'printer',
-        (device) => {
-          if (!device) return reject(new Error('No default Zebra printer found.'));
-          device.send(zpl, resolve, (err) => reject(new Error(`BrowserPrint error: ${err}`)));
-        },
-        (err) => reject(new Error(`BrowserPrint error: ${err}`))
-      );
-      return;
-    }
+    console.log('[BrowserPrint] Print requested', {
+      origin: window.location.origin,
+      secureContext: window.isSecureContext,
+      isLocalhost: isLocalhostRuntime(),
+      zplLength: zpl.length,
+    });
 
-    // Fallback: direct local Browser Print service API.
-    printWithLocalBrowserPrintApi(zpl)
-      .then(() => resolve())
-      .catch((err) => reject(new Error(`BrowserPrint not ready: ${err.message}`)));
+    ensureBrowserPrintSdk()
+      .then((hasSdk) => (hasSdk ? printWithBrowserPrintSdk(zpl) : printWithLocalBrowserPrintApi(zpl)))
+      .then(() => {
+        console.log('[BrowserPrint] Print flow completed');
+        resolve();
+      })
+      .catch((error) => {
+        console.error('[BrowserPrint] Print flow failed', error);
+        reject(toFriendlyBrowserPrintError(error, error?.message));
+      });
   });
 }

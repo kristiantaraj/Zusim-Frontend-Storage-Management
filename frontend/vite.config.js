@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 export default defineConfig({
   plugins: [
     react(),
+    basicSsl(),
     legacy({
       // Include Android 4.4-era WebView/Chrome and older iOS Safari targets.
       targets: ['Android >= 4.4', 'iOS >= 10'],
@@ -13,6 +15,8 @@ export default defineConfig({
     }),
   ],
   server: {
+    https: true,
+    host: true,
     port: 5173,
     proxy: {
       '/api': {
@@ -21,5 +25,9 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
+  },
+  preview: {
+    https: true,
+    host: true,
   },
 });
