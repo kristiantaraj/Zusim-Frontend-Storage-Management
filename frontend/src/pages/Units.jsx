@@ -6,6 +6,12 @@ import { generateBatchZpl, printWithBrowserPrint } from '../printing';
 
 export default function Units() {
   const { t } = useTranslation();
+  const readStoredNumber = (key, fallback) => {
+    const raw = window.localStorage.getItem(key);
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
   const [units, setUnits] = useState([]);
   const [total, setTotal] = useState(0);
   const [products, setProducts] = useState([]);
@@ -14,6 +20,8 @@ export default function Units() {
   const [printJobs, setPrintJobs] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [selected, setSelected] = useState([]);
+  const [labelWidthMm, setLabelWidthMm] = useState(() => readStoredNumber('labelWidthMm', 100));
+  const [labelHeightMm, setLabelHeightMm] = useState(() => readStoredNumber('labelHeightMm', 150));
   const [filters, setFilters] = useState({
     unit_id: '',
     product_id: '',
@@ -37,6 +45,14 @@ export default function Units() {
   const [printing, setPrinting] = useState(false);
 
   const selectedCount = selected.length;
+
+  useEffect(() => {
+    window.localStorage.setItem('labelWidthMm', String(labelWidthMm));
+  }, [labelWidthMm]);
+
+  useEffect(() => {
+    window.localStorage.setItem('labelHeightMm', String(labelHeightMm));
+  }, [labelHeightMm]);
 
   const loadUnits = () => {
     setLoading(true);
@@ -107,7 +123,11 @@ export default function Units() {
           unitId: x.unit_id,
           productName: x.product_name,
           batchDate: x.batch_date ? new Date(x.batch_date).toLocaleDateString() : '',
-        }))
+        })),
+        {
+          labelWidthMm,
+          labelHeightMm,
+        }
       );
       await printWithBrowserPrint(zpl);
 
@@ -139,13 +159,19 @@ export default function Units() {
   const retryFailedPrint = async (job) => {
     try {
       const label = await api.getUnitLabel(job.unit_id);
-      const zpl = generateBatchZpl([
+      const zpl = generateBatchZpl(
+        [
+          {
+            unitId: label.unit_id,
+            productName: label.product_name,
+            batchDate: label.batch_date ? new Date(label.batch_date).toLocaleDateString() : '',
+          },
+        ],
         {
-          unitId: label.unit_id,
-          productName: label.product_name,
-          batchDate: label.batch_date ? new Date(label.batch_date).toLocaleDateString() : '',
-        },
-      ]);
+          labelWidthMm,
+          labelHeightMm,
+        }
+      );
       await printWithBrowserPrint(zpl);
       await api.logPrintJob({ unit_id: job.unit_id, status: 'SUCCESS', requested_by: 'manager-retry' });
       setFeedback({ type: 'success', message: `Reprinted ${job.unit_id}` });
@@ -284,6 +310,39 @@ export default function Units() {
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h2 style={{ marginBottom: 10 }}>Failed Print Queue</h2>
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h3 style={{ marginTop: 0 }}>{t('inbound.labelSize')}</h3>
+          <p className="text-muted" style={{ marginBottom: 12 }}>
+            {t('inbound.labelSizeHelp')}
+          </p>
+          <div className="row" style={{ gap: 16, alignItems: 'end', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>{t('inbound.labelWidthMm')}</label>
+              <input
+                type="number"
+                min="30"
+                max="200"
+                step="1"
+                value={labelWidthMm}
+                onChange={(e) => setLabelWidthMm(parseInt(e.target.value, 10) || 30)}
+                style={{ width: 140 }}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>{t('inbound.labelHeightMm')}</label>
+              <input
+                type="number"
+                min="30"
+                max="300"
+                step="1"
+                value={labelHeightMm}
+                onChange={(e) => setLabelHeightMm(parseInt(e.target.value, 10) || 30)}
+                style={{ width: 140 }}
+              />
+            </div>
+          </div>
+        </div>
+
         {printJobs.length === 0 ? (
           <p className="text-muted">No failed print jobs.</p>
         ) : (
