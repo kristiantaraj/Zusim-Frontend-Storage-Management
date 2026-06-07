@@ -6,6 +6,51 @@
 
 const BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function shouldRetry(error, status) {
+  if (error) return true; // network failures / CORS / temporary gateway issues
+  return status >= 500 || status === 429;
+}
+
+async function fetchJsonWithRetry(path, opts, maxAttempts = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const res = await fetch(`${BASE}${path}`, opts);
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const err = new Error(data.error || `HTTP ${res.status}`);
+        err.status = res.status;
+        err.code = data.code;
+        err.data = data;
+
+        if (attempt < maxAttempts && shouldRetry(null, res.status)) {
+          await sleep(750 * attempt);
+          continue;
+        }
+
+        throw err;
+      }
+
+      return data;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < maxAttempts && shouldRetry(error, error?.status || 0)) {
+        await sleep(750 * attempt);
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastError || new Error('Request failed');
+}
+
 async function request(method, path, body) {
   const opts = {
     method,
@@ -13,17 +58,7 @@ async function request(method, path, body) {
   };
   if (body !== undefined) opts.body = JSON.stringify(body);
 
-  const res = await fetch(`${BASE}${path}`, opts);
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    const err = new Error(data.error || `HTTP ${res.status}`);
-    err.status = res.status;
-    err.code = data.code;
-    err.data = data;
-    throw err;
-  }
-  return data;
+  return fetchJsonWithRetry(path, opts);
 }
 
 async function requestCsv(path) {
@@ -38,6 +73,9 @@ async function requestCsv(path) {
 }
 
 export const api = {
+  health: () => request('GET', '/health'),
+  healthDb: () => request('GET', '/health/db'),
+
   // Dashboard
   getDashboard: () => request('GET', '/dashboard'),
 

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const prisma = require('./db');
 
 const productsRouter = require('./routes/products');
 const batchesRouter = require('./routes/batches');
@@ -34,6 +35,22 @@ app.use(express.json());
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+// Health check including database connectivity (useful when DB is waking from idle)
+app.get('/health/db', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return res.json({ status: 'ok', database: 'up', timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('DB health check failed:', err?.code || 'NO_CODE', err?.message || err);
+    return res.status(503).json({
+      status: 'degraded',
+      database: 'down',
+      error: 'Database unavailable or waking up.',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
 
 // Routes
 app.use('/products', productsRouter);
