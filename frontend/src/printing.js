@@ -67,9 +67,42 @@ const LOCAL_BROWSERPRINT_SCRIPT_URLS = [
   'http://localhost:9100/BrowserPrint-3.0.216.min.js',
 ];
 
+const PRINT_TIMEOUT_MS = 20000;
+const INIT_TIMEOUT_MS = 7000;
+const SEND_TIMEOUT_MS = 12000;
+const FETCH_TIMEOUT_MS = 6000;
+
 let browserPrintInitPromise = null;
 
 const isLocalhostRuntime = () => LOCAL_HOSTNAMES.includes(window.location.hostname);
+
+function withTimeout(promise, ms, timeoutMessage) {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(timeoutMessage));
+    }, ms);
+
+    promise
+      .then((value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function toFriendlyBrowserPrintError(error, fallbackMessage) {
   const message = String(error?.message || error || '');
@@ -114,7 +147,11 @@ async function ensureBrowserPrintSdk() {
   for (const src of LOCAL_BROWSERPRINT_SCRIPT_URLS) {
     try {
       console.log('[BrowserPrint] Attempting SDK load from', src);
-      await injectBrowserPrintScript(src);
+      await withTimeout(
+        injectBrowserPrintScript(src),
+        FETCH_TIMEOUT_MS,
+        `BrowserPrint SDK load timed out for ${src}`
+      );
       if (window.BrowserPrint) {
         console.log('[BrowserPrint] SDK loaded from', src);
         return true;
@@ -160,7 +197,11 @@ function initializeBrowserPrint() {
     throw error;
   });
 
-  return browserPrintInitPromise;
+  return withTimeout(
+    browserPrintInitPromise,
+    INIT_TIMEOUT_MS,
+    'Timed out while waiting for BrowserPrint to return default printer.'
+  );
 }
 
 async function printWithBrowserPrintSdk(zpl) {
@@ -171,19 +212,23 @@ async function printWithBrowserPrintSdk(zpl) {
     printerName: printer?.name || printer?.uid || 'unknown',
   });
 
-  return new Promise((resolve, reject) => {
-    printer.send(
-      zpl,
-      () => {
-        console.log('[BrowserPrint] SDK send completed successfully');
-        resolve();
-      },
-      (error) => {
-        console.error('[BrowserPrint] SDK send failed', error);
-        reject(toFriendlyBrowserPrintError(error, `BrowserPrint send error: ${String(error)}`));
-      }
-    );
-  });
+  await withTimeout(
+    new Promise((resolve, reject) => {
+      printer.send(
+        zpl,
+        () => {
+          console.log('[BrowserPrint] SDK send completed successfully');
+          resolve();
+        },
+        (error) => {
+          console.error('[BrowserPrint] SDK send failed', error);
+          reject(toFriendlyBrowserPrintError(error, `BrowserPrint send error: ${String(error)}`));
+        }
+      );
+    }),
+    SEND_TIMEOUT_MS,
+    'Timed out waiting for printer response. Check Zebra Browser Print service and printer connection.'
+  );
 }
 
 async function fetchAvailableLocalPrinters() {
@@ -192,7 +237,7 @@ async function fetchAvailableLocalPrinters() {
   for (const endpoint of endpoints) {
     try {
       console.log('[BrowserPrint] Checking local printers via', endpoint);
-      const res = await fetch(endpoint);
+      const res = await fetchWithTimeout(endpoint);
       if (!res.ok) continue;
       const data = await res.json();
       const printers = Array.isArray(data?.printer) ? data.printer : [];
@@ -234,7 +279,7 @@ async function printWithLocalBrowserPrintApi(zpl) {
   for (const endpoint of writeEndpoints) {
     try {
       console.log('[BrowserPrint] Sending ZPL via local endpoint', endpoint);
-      const res = await fetch(endpoint, {
+      const res = await fetchWithTimeout(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -272,8 +317,11 @@ export function printWithBrowserPrint(zpl) {
       zplLength: zpl.length,
     });
 
-    ensureBrowserPrintSdk()
-      .then((hasSdk) => (hasSdk ? printWithBrowserPrintSdk(zpl) : printWithLocalBrowserPrintApi(zpl)))
+    withTimeout(
+      ensureBrowserPrintSdk().then((hasSdk) => (hasSdk ? printWithBrowserPrintSdk(zpl) : printWithLocalBrowserPrintApi(zpl))),
+      PRINT_TIMEOUT_MS,
+      'Print request timed out. Please retry and check Browser Print service.'
+    )
       .then(() => {
         console.log('[BrowserPrint] Print flow completed');
         resolve();
