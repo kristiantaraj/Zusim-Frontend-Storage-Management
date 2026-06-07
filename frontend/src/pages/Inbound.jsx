@@ -6,11 +6,19 @@ import Feedback from '../components/Feedback';
 
 export default function Inbound() {
   const { t } = useTranslation();
+  const readStoredNumber = (key, fallback) => {
+    const raw = window.localStorage.getItem(key);
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState({
     product_id: '',
     delivery_date: new Date().toISOString().split('T')[0],
   });
+  const [labelWidthMm, setLabelWidthMm] = useState(() => readStoredNumber('labelWidthMm', 100));
+  const [labelHeightMm, setLabelHeightMm] = useState(() => readStoredNumber('labelHeightMm', 150));
   const [quantity, setQuantity] = useState(10);
   const [generatedUnits, setGeneratedUnits] = useState([]);
   const [feedback, setFeedback] = useState(null);
@@ -20,6 +28,14 @@ export default function Inbound() {
   useEffect(() => {
     api.getProducts().then(setProducts).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('labelWidthMm', String(labelWidthMm));
+  }, [labelWidthMm]);
+
+  useEffect(() => {
+    window.localStorage.setItem('labelHeightMm', String(labelHeightMm));
+  }, [labelHeightMm]);
 
   // Step 1: select product and generate batch
   const handleSelectProduct = async (e) => {
@@ -59,7 +75,11 @@ export default function Inbound() {
         unitId: u.id,
         productName: selectedProduct?.name ?? '',
         batchDate: form.delivery_date,
-      }))
+      })),
+      {
+        labelWidthMm,
+        labelHeightMm,
+      }
     );
     try {
       await printWithBrowserPrint(zpl);
@@ -137,6 +157,39 @@ export default function Inbound() {
           <p className="text-muted" style={{ marginBottom: 16 }}>
             {t('inbound.reviewIds')}
           </p>
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ marginTop: 0 }}>{t('inbound.labelSize')}</h3>
+            <p className="text-muted" style={{ marginBottom: 12 }}>
+              {t('inbound.labelSizeHelp')}
+            </p>
+            <div className="row" style={{ gap: 16, alignItems: 'end', flexWrap: 'wrap' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>{t('inbound.labelWidthMm')}</label>
+                <input
+                  type="number"
+                  min="30"
+                  max="200"
+                  step="1"
+                  value={labelWidthMm}
+                  onChange={(e) => setLabelWidthMm(parseInt(e.target.value, 10) || 30)}
+                  style={{ width: 140 }}
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>{t('inbound.labelHeightMm')}</label>
+                <input
+                  type="number"
+                  min="30"
+                  max="300"
+                  step="1"
+                  value={labelHeightMm}
+                  onChange={(e) => setLabelHeightMm(parseInt(e.target.value, 10) || 30)}
+                  style={{ width: 140 }}
+                />
+              </div>
+            </div>
+          </div>
 
           <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: 16 }}>
             <table>

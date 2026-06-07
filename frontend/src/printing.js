@@ -1,27 +1,59 @@
 /**
  * ZPL generation (mirrors the backend printing/zplGenerator.js but runs in browser).
  */
-export function generateZpl({ unitId, productName = '', batchDate = '' }) {
+export function generateZpl({
+  unitId,
+  productName = '',
+  batchDate = '',
+  labelWidthMm = 100,
+  labelHeightMm = 150,
+}) {
+  const mmToDots = (mm) => Math.round(mm * 8); // 203dpi ~= 8 dots/mm
+  const clampMm = (value, min, max, fallback) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.min(max, Math.max(min, parsed));
+  };
+
+  const safeWidthMm = clampMm(labelWidthMm, 30, 200, 100);
+  const safeHeightMm = clampMm(labelHeightMm, 30, 300, 150);
+
+  const widthDots = mmToDots(safeWidthMm);
+  const heightDots = mmToDots(safeHeightMm);
+
+  const baseWidth = 800;
+  const baseHeight = 400;
+  const scaleX = widthDots / baseWidth;
+  const scaleY = heightDots / baseHeight;
+  const scale = Math.min(scaleX, scaleY);
+
+  const x = (value) => Math.max(0, Math.round(value * scaleX));
+  const y = (value) => Math.max(0, Math.round(value * scaleY));
+  const sz = (value) => Math.max(14, Math.round(value * scale));
+
   const safeId = unitId.replace(/[^A-Za-z0-9\-]/g, '');
   const safeName = productName.substring(0, 30).replace(/[^A-Za-z0-9 \-\.]/g, '');
   const safeDate = batchDate.substring(0, 20).replace(/[^A-Za-z0-9 \-\/]/g, '');
+  const qrModule = Math.max(4, Math.min(10, Math.round(6 * scale)));
 
   return [
     '^XA',
-    '^FO30,30^A0N,50,50',
+    `^PW${widthDots}`,
+    `^LL${heightDots}`,
+    `^FO${x(30)},${y(30)}^A0N,${sz(50)},${sz(50)}`,
     `^FD${safeId}^FS`,
-    ...(safeName ? [`^FO30,90^A0N,28,28^FD${safeName}^FS`] : []),
-    ...(safeDate ? [`^FO30,125^A0N,22,22^FDBatch: ${safeDate}^FS`] : []),
-    '^FO460,20',
-    '^BQN,2,6',
+    ...(safeName ? [`^FO${x(30)},${y(90)}^A0N,${sz(28)},${sz(28)}^FD${safeName}^FS`] : []),
+    ...(safeDate ? [`^FO${x(30)},${y(125)}^A0N,${sz(22)},${sz(22)}^FDBatch: ${safeDate}^FS`] : []),
+    `^FO${x(460)},${y(20)}`,
+    `^BQN,2,${qrModule}`,
     `^FDQA,${safeId}^FS`,
-    '^FO20,175^GB760,3,3^FS',
+    `^FO${x(20)},${y(175)}^GB${Math.max(1, x(760))},${Math.max(1, sz(3))},${Math.max(1, sz(3))}^FS`,
     '^XZ',
   ].join('\n');
 }
 
-export function generateBatchZpl(units) {
-  return units.map((u) => generateZpl(u)).join('\n');
+export function generateBatchZpl(units, labelConfig = {}) {
+  return units.map((u) => generateZpl({ ...u, ...labelConfig })).join('\n');
 }
 
 async function fetchAvailableLocalPrinters() {
@@ -43,6 +75,13 @@ async function fetchAvailableLocalPrinters() {
 }
 
 async function printWithLocalBrowserPrintApi(zpl) {
+  const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  if (!window.isSecureContext && !isLocalHost) {
+    throw new Error(
+      'Browser security blocked access to local Browser Print service from an insecure HTTP site. Open this app via HTTPS (recommended) or run it locally on localhost.'
+    );
+  }
+
   const printers = await fetchAvailableLocalPrinters();
   if (!printers.length) {
     throw new Error(
