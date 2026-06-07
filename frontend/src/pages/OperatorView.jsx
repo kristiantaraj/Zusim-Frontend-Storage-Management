@@ -198,8 +198,8 @@ export default function OperatorView() {
             </div>
 
             {mode === 'out'
-              ? <ScanOut foreman={selectedForeman} project={selectedProject} />
-              : <ScanUsed />
+              ? <ScanOut foreman={selectedForeman} project={selectedProject} autoSubmit={true} />
+              : <ScanUsed autoSubmit={true} />
             }
           </>
         )}

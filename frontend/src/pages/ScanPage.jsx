@@ -4,9 +4,10 @@ import { api } from '../api';
 
 const MAX_HISTORY = 20;
 
-function ScanPage({ mode, foreman, project, returnUsed }) {
+function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
   const { t } = useTranslation();
   const inputRef = useRef(null);
+  const autoSubmitTimerRef = useRef(null);
   const [value, setValue] = useState('');
   const [scanning, setScanning] = useState(false);
   const [history, setHistory] = useState([]); // { id, unitId, type, message, time }
@@ -23,9 +24,17 @@ function ScanPage({ mode, foreman, project, returnUsed }) {
     ]);
   }, []);
 
-  const handleKeyDown = async (e) => {
-    if (e.key !== 'Enter') return;
-    const unitId = value.trim();
+  useEffect(() => {
+    return () => {
+      if (autoSubmitTimerRef.current) {
+        clearTimeout(autoSubmitTimerRef.current);
+        autoSubmitTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const submitScan = useCallback(async (rawValue) => {
+    const unitId = String(rawValue || '').replace(/[\r\n]+/g, '').trim();
     setValue('');
     if (!unitId || scanning) return;
 
@@ -53,6 +62,31 @@ function ScanPage({ mode, foreman, project, returnUsed }) {
       setScanning(false);
       inputRef.current?.focus();
     }
+  }, [addHistory, foreman?.id, mode, project?.id, returnUsed, scanning, t]);
+
+  const handleKeyDown = async (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    await submitScan(value);
+  };
+
+  const handleChange = (e) => {
+    const nextValue = e.target.value;
+    setValue(nextValue);
+
+    if (!autoSubmit || scanning) return;
+
+    if (autoSubmitTimerRef.current) {
+      clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
+
+    const hasScannerTerminator = /[\r\n]/.test(nextValue);
+    const delayMs = hasScannerTerminator ? 0 : 150;
+
+    autoSubmitTimerRef.current = setTimeout(() => {
+      submitScan(nextValue);
+    }, delayMs);
   };
 
   return (
@@ -82,7 +116,7 @@ function ScanPage({ mode, foreman, project, returnUsed }) {
         ref={inputRef}
         className="large"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder="HP-2026-000001"
         disabled={scanning}
@@ -120,14 +154,14 @@ function ScanPage({ mode, foreman, project, returnUsed }) {
   );
 }
 
-export function ScanOut({ foreman, project }) {
-  return <ScanPage mode="out" foreman={foreman} project={project} />;
+export function ScanOut({ foreman, project, autoSubmit = false }) {
+  return <ScanPage mode="out" foreman={foreman} project={project} autoSubmit={autoSubmit} />;
 }
 
-export function ScanIn({ foreman }) {
-  return <ScanPage mode="in" foreman={foreman} returnUsed={false} />;
+export function ScanIn({ foreman, autoSubmit = false }) {
+  return <ScanPage mode="in" foreman={foreman} returnUsed={false} autoSubmit={autoSubmit} />;
 }
 
-export function ScanUsed({ foreman }) {
-  return <ScanPage mode="in" foreman={foreman} returnUsed={true} />;
+export function ScanUsed({ foreman, autoSubmit = false }) {
+  return <ScanPage mode="in" foreman={foreman} returnUsed={true} autoSubmit={autoSubmit} />;
 }
