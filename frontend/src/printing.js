@@ -24,53 +24,60 @@ export function generateBatchZpl(units) {
   return units.map((u) => generateZpl(u)).join('\n');
 }
 
-let browserPrintLoadPromise = null;
+async function fetchAvailableLocalPrinters() {
+  const endpoints = ['http://localhost:9100/available', 'https://localhost:9101/available'];
 
-function injectScript(src) {
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[data-browserprint-src="${src}"]`);
-    if (existing) {
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
-      return;
+  for (const endpoint of endpoints) {
+    try {
+      const res = await fetch(endpoint);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const printers = Array.isArray(data?.printer) ? data.printer : [];
+      if (printers.length) return printers;
+    } catch {
+      // Try next endpoint.
     }
+  }
 
-    const script = document.createElement('script');
-    script.src = src;
-    script.async = true;
-    script.dataset.browserprintSrc = src;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Failed to load ${src}`));
-    document.head.appendChild(script);
-  });
+  return [];
 }
 
-async function ensureBrowserPrintLoaded() {
-  if (window.BrowserPrint) return;
-  if (browserPrintLoadPromise) return browserPrintLoadPromise;
-
-  const candidates = [
-    'https://localhost:9101/BrowserPrint-3.1.250.min.js',
-    'https://localhost:9101/BrowserPrint-3.0.216.min.js',
-    'http://localhost:9100/BrowserPrint-3.1.250.min.js',
-    'http://localhost:9100/BrowserPrint-3.0.216.min.js',
-  ];
-
-  browserPrintLoadPromise = (async () => {
-    for (const src of candidates) {
-      try {
-        await injectScript(src);
-        if (window.BrowserPrint) return;
-      } catch {
-        // Try next BrowserPrint SDK endpoint/version.
-      }
-    }
+async function printWithLocalBrowserPrintApi(zpl) {
+  const printers = await fetchAvailableLocalPrinters();
+  if (!printers.length) {
     throw new Error(
-      'Zebra BrowserPrint SDK not loaded. Ensure Browser Print is installed and running, then allow localhost:9101/9100 access.'
+      'No local Browser Print printers found. Ensure Zebra Browser Print is running and the printer is connected.'
     );
-  })();
+  }
 
-  return browserPrintLoadPromise;
+  const payload = {
+    device: printers[0],
+    data: zpl,
+  };
+
+  const writeEndpoints = ['http://localhost:9100/write', 'https://localhost:9101/write'];
+  let lastError = null;
+
+  for (const endpoint of writeEndpoints) {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        lastError = new Error(`Browser Print write failed: HTTP ${res.status}`);
+        continue;
+      }
+
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('Browser Print write failed.');
 }
 
 /**
@@ -81,17 +88,22 @@ async function ensureBrowserPrintLoaded() {
  */
 export function printWithBrowserPrint(zpl) {
   return new Promise((resolve, reject) => {
-    ensureBrowserPrintLoaded()
-      .then(() => {
-        window.BrowserPrint.getDefaultDevice(
-          'printer',
-          (device) => {
-            if (!device) return reject(new Error('No default Zebra printer found.'));
-            device.send(zpl, resolve, (err) => reject(new Error(`BrowserPrint error: ${err}`)));
-          },
-          (err) => reject(new Error(`BrowserPrint error: ${err}`))
-        );
-      })
-      .catch((err) => reject(err));
+    // Preferred: SDK global if available.
+    if (window.BrowserPrint) {
+      window.BrowserPrint.getDefaultDevice(
+        'printer',
+        (device) => {
+          if (!device) return reject(new Error('No default Zebra printer found.'));
+          device.send(zpl, resolve, (err) => reject(new Error(`BrowserPrint error: ${err}`)));
+        },
+        (err) => reject(new Error(`BrowserPrint error: ${err}`))
+      );
+      return;
+    }
+
+    // Fallback: direct local Browser Print service API.
+    printWithLocalBrowserPrintApi(zpl)
+      .then(() => resolve())
+      .catch((err) => reject(new Error(`BrowserPrint not ready: ${err.message}`)));
   });
 }
