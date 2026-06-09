@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useRole } from '../context/RoleContext';
+import logo from '../../zusim_logo_white.svg';
 
 export default function RoleSelector() {
   const { t } = useTranslation();
@@ -35,53 +36,59 @@ export default function RoleSelector() {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
-      <div className="card" style={{ textAlign: 'center', maxWidth: 400 }}>
-        <div style={{ fontSize: 32, marginBottom: 16 }}>Zusim Inventory</div>
-        <h1 style={{ marginBottom: 8 }}>{t('roles.selectRole')}</h1>
-        <p className="text-muted" style={{ marginBottom: 32 }}>{t('roles.selectRoleDesc')}</p>
-
-        <div style={{ marginBottom: 20, textAlign: 'left' }}>
-          <label htmlFor="manager-password" className="text-muted" style={{ display: 'block', marginBottom: 6 }}>
-            {t('roles.managerPasswordLabel')}
-          </label>
-          <input
-            id="manager-password"
-            type="password"
-            value={managerPassword}
-            onChange={(e) => setManagerPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                selectRole('manager');
-              }
-            }}
-            placeholder={t('roles.managerPasswordPlaceholder')}
-            style={{ width: '100%' }}
-          />
-          {error && (
-            <div style={{ marginTop: 8, color: 'var(--danger)', fontSize: 13 }}>
-              {error}
-            </div>
-          )}
+    <div className="role-selector-page">
+      <div className="role-selector-shell card">
+        <div className="role-selector-brand">
+          <img src={logo} alt="Zusim" className="role-selector-logo" />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <button
-            className="btn btn-primary"
-            onClick={() => selectRole('manager')}
-            style={{ padding: '20px', height: 'auto', flexDirection: 'column', alignItems: 'center' }}
-          >
-            <div style={{ fontSize: 24, marginBottom: 8 }}>👔</div>
-            <div style={{ fontWeight: 700 }}>{t('roles.manager')}</div>
-          </button>
-          <button
-            className="btn btn-ghost"
-            onClick={() => selectRole('operator')}
-            style={{ padding: '20px', height: 'auto', flexDirection: 'column', alignItems: 'center' }}
-          >
-            <div style={{ fontSize: 24, marginBottom: 8 }}>📦</div>
-            <div style={{ fontWeight: 700 }}>{t('roles.operator')}</div>
-          </button>
+        <div className="role-selector-content">
+          <h1>{t('roles.selectRole')}</h1>
+          <p className="text-muted role-selector-subtitle">{t('roles.selectRoleDesc')}</p>
+
+          <div className="role-manager-access">
+            <label htmlFor="manager-password" className="text-muted role-manager-label">
+            {t('roles.managerPasswordLabel')}
+            </label>
+            <input
+              id="manager-password"
+              type="password"
+              value={managerPassword}
+              onChange={(e) => setManagerPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  selectRole('manager');
+                }
+              }}
+              placeholder={t('roles.managerPasswordPlaceholder')}
+            />
+            {error && (
+              <div className="role-manager-error">
+                {error}
+              </div>
+            )}
+          </div>
+
+          <div className="role-choice-grid">
+            <button
+              className="btn btn-primary role-choice-btn role-choice-manager"
+              onClick={() => selectRole('manager')}
+            >
+              <div className="role-choice-icon">👔</div>
+              <div className="role-choice-title">{t('roles.manager')}</div>
+            </button>
+            <button
+              className="btn btn-ghost role-choice-btn"
+              onClick={() => selectRole('operator')}
+            >
+              <div className="role-choice-icon">📦</div>
+              <div className="role-choice-title">{t('roles.operator')}</div>
+            </button>
+          </div>
+
+          <p className="text-muted role-selector-footnote">
+            Zusim Workspace
+          </p>
         </div>
       </div>
     </div>

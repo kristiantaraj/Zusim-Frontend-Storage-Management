@@ -4,6 +4,7 @@ import { useRole } from '../context/RoleContext';
 import { useNavigate } from 'react-router-dom';
 import { ScanOut, ScanUsed } from './ScanPage';
 import { api } from '../api';
+import logo from '../../zusim_logo_white.svg';
 
 export default function OperatorView() {
   const { t, i18n } = useTranslation();
@@ -45,8 +46,13 @@ export default function OperatorView() {
     <div className="operator-view">
       {/* Top bar */}
       <div className="operator-topbar">
-        <div className="operator-brand">
-          Zusim — {t('roles.operator')}
+        <div className="operator-brand-block">
+          <div className="operator-brand-logo-wrap">
+            <img src={logo} alt="Zusim" className="operator-brand-logo" />
+          </div>
+          <div className="operator-brand">
+            {t('roles.operator')}
+          </div>
         </div>
         <div className="operator-topbar-actions">
           <button className="btn btn-ghost" onClick={toggleLanguage}>
