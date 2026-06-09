@@ -99,16 +99,16 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
             : '↩ ' + t('scan.titleIn')}
       </h1>
       {foreman?.name && (
-        <p className="text-muted" style={{ marginBottom: 4 }}>
+        <p className="text-muted scan-meta-line">
           {t('scan.selectedForeman')}: {foreman.icon || '👷'} {foreman.name}
         </p>
       )}
       {project?.name && (
-        <p className="text-muted" style={{ marginBottom: 8 }}>
+        <p className="text-muted scan-meta-line scan-meta-line-gap">
           {t('scan.selectedProject')}: 📁 {project.name}
         </p>
       )}
-      <p className="text-muted" style={{ marginBottom: 20 }}>
+      <p className="text-muted scan-instruction">
         {t('scan.scanLabel')}
       </p>
 
@@ -125,18 +125,17 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
       />
 
       {scanning && (
-        <p className="text-muted" style={{ marginTop: 10 }}>
+        <p className="text-muted scan-processing">
           {t('scan.processing')}
         </p>
       )}
 
       {history.length > 0 && (
         <div className="scan-history">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <strong style={{ fontSize: 14 }}>{t('scan.recentScans')}</strong>
+          <div className="scan-history-header">
+            <strong>{t('scan.recentScans')}</strong>
             <button
-              className="btn btn-ghost"
-              style={{ padding: '4px 10px', fontSize: 12 }}
+              className="btn btn-ghost scan-clear-btn"
               onClick={() => setHistory([])}
             >
               {t('scan.clear')}
@@ -144,8 +143,8 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
           </div>
           {history.map((h) => (
             <div key={h.id} className={`scan-history-item ${h.type}`}>
-              <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{h.time}</span>
-              <span style={{ flex: 1 }}>{h.message}</span>
+              <span className="scan-history-time">{h.time}</span>
+              <span className="scan-history-message">{h.message}</span>
             </div>
           ))}
         </div>
