@@ -135,7 +135,7 @@ export default function Units() {
         selectedUnits.map((u) => api.logPrintJob({ unit_id: u.id, status: 'SUCCESS', requested_by: 'manager' }))
       );
 
-      setFeedback({ type: 'success', message: `Printed ${selectedUnits.length} label(s).` });
+      setFeedback({ type: 'success', message: t('units.printed', { count: selectedUnits.length }) });
       setSelected([]);
       loadPrintJobs();
     } catch (err) {
@@ -174,7 +174,7 @@ export default function Units() {
       );
       await printWithBrowserPrint(zpl);
       await api.logPrintJob({ unit_id: job.unit_id, status: 'SUCCESS', requested_by: 'manager-retry' });
-      setFeedback({ type: 'success', message: `Reprinted ${job.unit_id}` });
+      setFeedback({ type: 'success', message: t('units.reprinted', { id: job.unit_id }) });
       loadPrintJobs();
     } catch (err) {
       await api.logPrintJob({ unit_id: job.unit_id, status: 'FAILED', error: err.message, requested_by: 'manager-retry' }).catch(() => {});
@@ -196,7 +196,7 @@ export default function Units() {
         foreman_id: forceForm.foreman_id || undefined,
         project_id: forceForm.project_id || undefined,
       });
-      setFeedback({ type: 'success', message: `Updated ${forceForm.unit_id} to ${forceForm.status}.` });
+      setFeedback({ type: 'success', message: t('units.updatedStatus', { id: forceForm.unit_id, status: forceForm.status }) });
       setForceForm((f) => ({ ...f, note: '' }));
       loadUnits();
     } catch (err) {
@@ -211,15 +211,15 @@ export default function Units() {
       {feedback && <Feedback message={feedback.message} type={feedback.type} />}
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ marginBottom: 10 }}>Manual Correction</h2>
+        <h2 style={{ marginBottom: 10 }}>{t('units.manualCorrection')}</h2>
         <form onSubmit={submitForce}>
           <div className="row">
             <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-              <label>Unit ID</label>
+              <label>{t('units.unitId')}</label>
               <input value={forceForm.unit_id} onChange={(e) => setForceForm((f) => ({ ...f, unit_id: e.target.value }))} placeholder="HP-2026-000001" required />
             </div>
             <div className="form-group" style={{ width: 130, marginBottom: 0 }}>
-              <label>Status</label>
+              <label>{t('common.status')}</label>
               <select value={forceForm.status} onChange={(e) => setForceForm((f) => ({ ...f, status: e.target.value }))}>
                 <option value="IN">IN</option>
                 <option value="OUT">OUT</option>
@@ -227,29 +227,29 @@ export default function Units() {
               </select>
             </div>
             <div className="form-group" style={{ width: 160, marginBottom: 0 }}>
-              <label>Reason Code</label>
+              <label>{t('units.reasonCode')}</label>
               <input value={forceForm.reason_code} onChange={(e) => setForceForm((f) => ({ ...f, reason_code: e.target.value }))} required />
             </div>
             <div className="form-group" style={{ flex: 1, minWidth: 220, marginBottom: 0 }}>
-              <label>Note</label>
-              <input value={forceForm.note} onChange={(e) => setForceForm((f) => ({ ...f, note: e.target.value }))} placeholder="Explain why this correction is needed" />
+              <label>{t('common.note')}</label>
+              <input value={forceForm.note} onChange={(e) => setForceForm((f) => ({ ...f, note: e.target.value }))} placeholder={t('units.explainCorrection')} />
             </div>
             <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-              <label>Foreman (optional)</label>
+              <label>{t('units.foremanOptional')}</label>
               <select value={forceForm.foreman_id} onChange={(e) => setForceForm((f) => ({ ...f, foreman_id: e.target.value }))}>
                 <option value="">—</option>
                 {foremen.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
             <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-              <label>Project (optional)</label>
+              <label>{t('units.projectOptional')}</label>
               <select value={forceForm.project_id} onChange={(e) => setForceForm((f) => ({ ...f, project_id: e.target.value }))}>
                 <option value="">—</option>
                 {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'end' }}>
-              <button className="btn btn-primary" type="submit">Force Update</button>
+              <button className="btn btn-primary" type="submit">{t('units.forceUpdate')}</button>
             </div>
           </div>
         </form>
@@ -258,8 +258,8 @@ export default function Units() {
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="row">
           <div className="form-group" style={{ width: 220, marginBottom: 0 }}>
-            <label>Unit ID</label>
-            <input value={filters.unit_id} onChange={(e) => setFilter('unit_id', e.target.value)} placeholder="contains..." />
+            <label>{t('units.unitId')}</label>
+            <input value={filters.unit_id} onChange={(e) => setFilter('unit_id', e.target.value)} placeholder={t('units.contains')} />
           </div>
           <div className="form-group" style={{ width: 220, marginBottom: 0 }}>
             <label>{t('units.product')}</label>
@@ -278,38 +278,38 @@ export default function Units() {
             </select>
           </div>
           <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-            <label>Foreman</label>
+            <label>{t('foremen.title')}</label>
             <select value={filters.foreman_id} onChange={(e) => setFilter('foreman_id', e.target.value)}>
-              <option value="">All</option>
+              <option value="">{t('common.all')}</option>
               {foremen.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
             </select>
           </div>
           <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-            <label>Project</label>
+            <label>{t('projects.title')}</label>
             <select value={filters.project_id} onChange={(e) => setFilter('project_id', e.target.value)}>
-              <option value="">All</option>
+              <option value="">{t('common.all')}</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
           <div className="form-group" style={{ width: 150, marginBottom: 0 }}>
-            <label>From</label>
+            <label>{t('common.from')}</label>
             <input type="date" value={filters.from_date} onChange={(e) => setFilter('from_date', e.target.value)} />
           </div>
           <div className="form-group" style={{ width: 150, marginBottom: 0 }}>
-            <label>To</label>
+            <label>{t('common.to')}</label>
             <input type="date" value={filters.to_date} onChange={(e) => setFilter('to_date', e.target.value)} />
           </div>
           <div style={{ display: 'flex', alignItems: 'end', gap: 8 }}>
-            <button className="btn btn-ghost" type="button" onClick={exportCsv}>Export CSV</button>
+            <button className="btn btn-ghost" type="button" onClick={exportCsv}>{t('units.exportCsv')}</button>
             <button className="btn btn-primary" type="button" disabled={!selectedCount || printing} onClick={printSelected}>
-              {printing ? 'Printing...' : `Reprint Selected (${selectedCount})`}
+              {printing ? t('inbound.printing') : t('units.reprintSelected', { count: selectedCount })}
             </button>
           </div>
         </div>
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ marginBottom: 10 }}>Failed Print Queue</h2>
+        <h2 style={{ marginBottom: 10 }}>{t('units.failedPrintQueue')}</h2>
         <div className="card" style={{ marginBottom: 16 }}>
           <h3 style={{ marginTop: 0 }}>{t('inbound.labelSize')}</h3>
           <p className="text-muted" style={{ marginBottom: 12 }}>
@@ -344,16 +344,16 @@ export default function Units() {
         </div>
 
         {printJobs.length === 0 ? (
-          <p className="text-muted">No failed print jobs.</p>
+          <p className="text-muted">{t('units.noFailedPrintJobs')}</p>
         ) : (
           <table>
             <thead>
               <tr>
-                <th>When</th>
-                <th>Unit</th>
-                <th>Product</th>
-                <th>Error</th>
-                <th>Retry</th>
+                <th>{t('common.when')}</th>
+                <th>{t('units.unitId')}</th>
+                <th>{t('units.product')}</th>
+                <th>{t('common.error')}</th>
+                <th>{t('common.retry')}</th>
               </tr>
             </thead>
             <tbody>
@@ -362,8 +362,8 @@ export default function Units() {
                   <td className="text-muted">{new Date(j.created_at).toLocaleString()}</td>
                   <td className="monospace">{j.unit_id}</td>
                   <td>{j.unit?.product?.name || '—'}</td>
-                  <td className="text-muted">{j.error || 'Unknown'}</td>
-                  <td><button className="btn btn-ghost" onClick={() => retryFailedPrint(j)}>Retry</button></td>
+                  <td className="text-muted">{j.error || t('common.unknown')}</td>
+                  <td><button className="btn btn-ghost" onClick={() => retryFailedPrint(j)}>{t('common.retry')}</button></td>
                 </tr>
               ))}
             </tbody>
@@ -410,7 +410,7 @@ export default function Units() {
                 <th>{t('units.product')}</th>
                 <th>{t('units.batch')}</th>
                 <th>{t('units.status')}</th>
-                <th>Open Ticket</th>
+                <th>{t('units.openTicket')}</th>
                 <th>{t('units.created')}</th>
                 <th>{t('units.updated')}</th>
               </tr>

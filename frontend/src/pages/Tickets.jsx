@@ -98,7 +98,7 @@ function HistoryCard({ ticket, onReopen }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span className="text-muted" style={{ fontSize: 12 }}>{total} {t('tickets.units')}</span>
-          <button className="btn btn-ghost" onClick={() => onReopen(ticket.id)}>Reopen</button>
+          <button className="btn btn-ghost" onClick={() => onReopen(ticket.id)}>{t('tickets.reopen')}</button>
         </div>
       </div>
     </div>
@@ -146,7 +146,7 @@ export default function Tickets() {
     try {
       await api.closeTicket(id, note);
       setOpenTickets((prev) => prev.filter((tk) => tk.id !== id));
-      setFeedback({ type: 'success', message: `Closed ticket #${id}` });
+      setFeedback({ type: 'success', message: t('tickets.closedTicket', { id }) });
     } catch (err) {
       setFeedback({ type: 'error', message: err.message });
     }
@@ -155,7 +155,7 @@ export default function Tickets() {
   const handleReopen = async (id) => {
     try {
       await api.reopenTicket(id);
-      setFeedback({ type: 'success', message: `Reopened ticket #${id}` });
+      setFeedback({ type: 'success', message: t('tickets.reopenedTicket', { id }) });
       loadClosed();
       loadOpen();
     } catch (err) {
@@ -171,7 +171,7 @@ export default function Tickets() {
         source_ticket_ids: mergeForm.source_ticket_ids.split(',').map((x) => parseInt(x.trim(), 10)).filter(Boolean),
         note: mergeForm.note || undefined,
       });
-      setFeedback({ type: 'success', message: 'Tickets merged.' });
+      setFeedback({ type: 'success', message: t('tickets.merged') });
       setMergeForm({ target_ticket_id: '', source_ticket_ids: '', note: '' });
       loadOpen();
       loadClosed();
@@ -187,7 +187,7 @@ export default function Tickets() {
         unit_ids: splitForm.unit_ids.split(',').map((x) => x.trim()).filter(Boolean),
         note: splitForm.note || undefined,
       });
-      setFeedback({ type: 'success', message: 'Ticket split created.' });
+      setFeedback({ type: 'success', message: t('tickets.splitCreated') });
       setSplitForm({ ticket_id: '', unit_ids: '', note: '' });
       loadOpen();
     } catch (err) {
@@ -202,40 +202,40 @@ export default function Tickets() {
 
       <div className="row" style={{ marginBottom: 16 }}>
         <div className="card" style={{ flex: 1, minWidth: 320 }}>
-          <h2 style={{ marginBottom: 10 }}>Merge Tickets</h2>
+          <h2 style={{ marginBottom: 10 }}>{t('tickets.mergeTitle')}</h2>
           <form onSubmit={submitMerge}>
             <div className="form-group">
-              <label>Target Ticket ID</label>
+              <label>{t('tickets.targetTicketId')}</label>
               <input value={mergeForm.target_ticket_id} onChange={(e) => setMergeForm((f) => ({ ...f, target_ticket_id: e.target.value }))} required />
             </div>
             <div className="form-group">
-              <label>Source Ticket IDs (comma separated)</label>
+              <label>{t('tickets.sourceTicketIds')}</label>
               <input value={mergeForm.source_ticket_ids} onChange={(e) => setMergeForm((f) => ({ ...f, source_ticket_ids: e.target.value }))} required />
             </div>
             <div className="form-group">
-              <label>Note</label>
+              <label>{t('common.note')}</label>
               <input value={mergeForm.note} onChange={(e) => setMergeForm((f) => ({ ...f, note: e.target.value }))} />
             </div>
-            <button className="btn btn-primary" type="submit">Merge</button>
+            <button className="btn btn-primary" type="submit">{t('tickets.merge')}</button>
           </form>
         </div>
 
         <div className="card" style={{ flex: 1, minWidth: 320 }}>
-          <h2 style={{ marginBottom: 10 }}>Split Ticket</h2>
+          <h2 style={{ marginBottom: 10 }}>{t('tickets.splitTitle')}</h2>
           <form onSubmit={submitSplit}>
             <div className="form-group">
-              <label>Source Ticket ID</label>
+              <label>{t('tickets.sourceTicketId')}</label>
               <input value={splitForm.ticket_id} onChange={(e) => setSplitForm((f) => ({ ...f, ticket_id: e.target.value }))} required />
             </div>
             <div className="form-group">
-              <label>Unit IDs to move (comma separated)</label>
+              <label>{t('tickets.unitIdsToMove')}</label>
               <input value={splitForm.unit_ids} onChange={(e) => setSplitForm((f) => ({ ...f, unit_ids: e.target.value }))} required />
             </div>
             <div className="form-group">
-              <label>Note</label>
+              <label>{t('common.note')}</label>
               <input value={splitForm.note} onChange={(e) => setSplitForm((f) => ({ ...f, note: e.target.value }))} />
             </div>
-            <button className="btn btn-primary" type="submit">Split</button>
+            <button className="btn btn-primary" type="submit">{t('tickets.split')}</button>
           </form>
         </div>
       </div>

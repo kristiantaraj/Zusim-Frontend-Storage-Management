@@ -39,7 +39,7 @@ export default function Foremen() {
   };
 
   const handleDelete = async (id) => {
-    if (requireConfirm && !window.confirm('Archive this foreman?')) return;
+    if (requireConfirm && !window.confirm(t('foremen.archiveConfirm'))) return;
     setFeedback(null);
     try {
       await api.deleteForeman(id);
@@ -54,7 +54,7 @@ export default function Foremen() {
     setFeedback(null);
     try {
       await api.restoreForeman(id);
-      setFeedback({ type: 'success', message: 'Foreman restored.' });
+      setFeedback({ type: 'success', message: t('foremen.restored') });
       loadForemen();
     } catch (err) {
       setFeedback({ type: 'error', message: err.message });
@@ -66,14 +66,14 @@ export default function Foremen() {
       <div className="section-header">
         <h1>{t('foremen.title')}</h1>
         <button className="btn btn-ghost" onClick={() => setShowInactive((v) => !v)}>
-          {showInactive ? 'Hide Archived' : 'Show Archived'}
+          {showInactive ? t('common.hideArchived') : t('common.showArchived')}
         </button>
       </div>
 
       <div style={{ marginBottom: 8 }}>
         <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 13 }}>
           <input type="checkbox" checked={requireConfirm} onChange={(e) => setRequireConfirm(e.target.checked)} />
-          Require confirmation for destructive actions
+          {t('common.requireDestructiveConfirm')}
         </label>
       </div>
 
@@ -110,8 +110,8 @@ export default function Foremen() {
                 <th>{t('foremen.icon')}</th>
                 <th>{t('foremen.name')}</th>
                 <th>{t('units.created')}</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('common.status')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -120,12 +120,12 @@ export default function Foremen() {
                   <td style={{ fontSize: 22 }}>{foreman.icon || '👷'}</td>
                   <td><strong>{foreman.name}</strong></td>
                   <td className="text-muted">{new Date(foreman.created_at).toLocaleDateString()}</td>
-                  <td>{foreman.is_active ? 'ACTIVE' : 'ARCHIVED'}</td>
+                  <td>{foreman.is_active ? t('common.active') : t('common.archived')}</td>
                   <td>
                     {foreman.is_active ? (
                       <button type="button" className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(foreman.id)}>{t('common.delete')}</button>
                     ) : (
-                      <button type="button" className="btn btn-ghost" onClick={() => handleRestore(foreman.id)}>Restore</button>
+                      <button type="button" className="btn btn-ghost" onClick={() => handleRestore(foreman.id)}>{t('common.restore')}</button>
                     )}
                   </td>
                 </tr>

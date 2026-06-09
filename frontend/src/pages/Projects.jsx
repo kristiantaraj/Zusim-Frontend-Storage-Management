@@ -38,7 +38,7 @@ export default function Projects() {
   };
 
   const handleDelete = async (id) => {
-    if (requireConfirm && !window.confirm('Archive this project?')) return;
+    if (requireConfirm && !window.confirm(t('projects.archiveConfirm'))) return;
     setFeedback(null);
     try {
       await api.deleteProject(id);
@@ -53,7 +53,7 @@ export default function Projects() {
     setFeedback(null);
     try {
       await api.restoreProject(id);
-      setFeedback({ type: 'success', message: 'Project restored.' });
+      setFeedback({ type: 'success', message: t('projects.restored') });
       loadProjects();
     } catch (err) {
       setFeedback({ type: 'error', message: err.message });
@@ -65,14 +65,14 @@ export default function Projects() {
       <div className="section-header">
         <h1>{t('projects.title')}</h1>
         <button className="btn btn-ghost" onClick={() => setShowInactive((v) => !v)}>
-          {showInactive ? 'Hide Archived' : 'Show Archived'}
+          {showInactive ? t('common.hideArchived') : t('common.showArchived')}
         </button>
       </div>
 
       <div style={{ marginBottom: 8 }}>
         <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 13 }}>
           <input type="checkbox" checked={requireConfirm} onChange={(e) => setRequireConfirm(e.target.checked)} />
-          Require confirmation for destructive actions
+          {t('common.requireDestructiveConfirm')}
         </label>
       </div>
 
@@ -104,8 +104,8 @@ export default function Projects() {
               <tr>
                 <th>{t('projects.name')}</th>
                 <th>{t('units.created')}</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('common.status')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -113,12 +113,12 @@ export default function Projects() {
                 <tr key={project.id}>
                   <td><strong>📁 {project.name}</strong></td>
                   <td className="text-muted">{new Date(project.created_at).toLocaleDateString()}</td>
-                  <td>{project.is_active ? 'ACTIVE' : 'ARCHIVED'}</td>
+                  <td>{project.is_active ? t('common.active') : t('common.archived')}</td>
                   <td>
                     {project.is_active ? (
                       <button type="button" className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(project.id)}>{t('common.delete')}</button>
                     ) : (
-                      <button type="button" className="btn btn-ghost" onClick={() => handleRestore(project.id)}>Restore</button>
+                      <button type="button" className="btn btn-ghost" onClick={() => handleRestore(project.id)}>{t('common.restore')}</button>
                     )}
                   </td>
                 </tr>

@@ -30,30 +30,30 @@ export default function Dashboard() {
         <StatCard value={data.usedCount} label={t('dashboard.used')} color="var(--text-muted)" />
       </div>
 
-      <div className="row" style={{ marginBottom: 16 }}>
-        <div className="card" style={{ flex: 1, minWidth: 260 }}>
-          <h2 style={{ marginBottom: 10 }}>Weekly Trends</h2>
-          <TrendLine label="Issued" item={data.trends?.issued} />
-          <TrendLine label="Returned" item={data.trends?.returned} />
-          <TrendLine label="Used" item={data.trends?.used} />
+      <div className="dashboard-grid" style={{ marginBottom: 16 }}>
+        <div className="card dashboard-section-card">
+          <h2>{t('dashboard.weeklyTrends')}</h2>
+          <TrendLine label={t('dashboard.issued')} item={data.trends?.issued} />
+          <TrendLine label={t('dashboard.returned')} item={data.trends?.returned} />
+          <TrendLine label={t('dashboard.usedLabel')} item={data.trends?.used} />
         </div>
 
-        <div className="card" style={{ flex: 1, minWidth: 300 }}>
-          <h2 style={{ marginBottom: 10 }}>Alerts</h2>
-          <p className="text-muted" style={{ marginBottom: 8 }}>Stale OUT units: {data.alerts?.staleOutUnits?.length || 0}</p>
-          <p className="text-muted" style={{ marginBottom: 8 }}>Long open tickets: {data.alerts?.longOpenTickets?.length || 0}</p>
-          <p className="text-muted">Low stock products: {data.alerts?.lowStockProducts?.length || 0}</p>
+        <div className="card dashboard-section-card">
+          <h2>{t('dashboard.alerts')}</h2>
+          <p className="text-muted dashboard-line-item">{t('dashboard.staleOutUnits')}: {data.alerts?.staleOutUnits?.length || 0}</p>
+          <p className="text-muted dashboard-line-item">{t('dashboard.longOpenTickets')}: {data.alerts?.longOpenTickets?.length || 0}</p>
+          <p className="text-muted">{t('dashboard.lowStockProducts')}: {data.alerts?.lowStockProducts?.length || 0}</p>
         </div>
       </div>
 
-      <div className="row" style={{ marginBottom: 16 }}>
-        <div className="card" style={{ flex: 1, minWidth: 260 }}>
-          <h2 style={{ marginBottom: 10 }}>Top Products (7d)</h2>
+      <div className="dashboard-grid dashboard-grid-3" style={{ marginBottom: 16 }}>
+        <div className="card dashboard-section-card">
+          <h2>{t('dashboard.topProducts7d')}</h2>
           {(data.insights?.topProducts || []).length === 0 ? (
-            <p className="text-muted">No data</p>
+            <p className="text-muted">{t('dashboard.noData')}</p>
           ) : (
             (data.insights?.topProducts || []).map((x, i) => (
-              <div key={`${x.product}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div key={`${x.product}-${i}`} className="dashboard-row-item">
                 <span>{x.product}</span>
                 <strong>{x.count}</strong>
               </div>
@@ -61,13 +61,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card" style={{ flex: 1, minWidth: 260 }}>
-          <h2 style={{ marginBottom: 10 }}>Foreman Activity (7d)</h2>
+        <div className="card dashboard-section-card">
+          <h2>{t('dashboard.foremanActivity7d')}</h2>
           {(data.insights?.foremen || []).length === 0 ? (
-            <p className="text-muted">No data</p>
+            <p className="text-muted">{t('dashboard.noData')}</p>
           ) : (
             (data.insights?.foremen || []).map((x) => (
-              <div key={x.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div key={x.id} className="dashboard-row-item">
                 <span>{x.icon || '👷'} {x.name}</span>
                 <strong>{x.tickets}</strong>
               </div>
@@ -75,13 +75,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card" style={{ flex: 1, minWidth: 260 }}>
-          <h2 style={{ marginBottom: 10 }}>Project Activity (7d)</h2>
+        <div className="card dashboard-section-card">
+          <h2>{t('dashboard.projectActivity7d')}</h2>
           {(data.insights?.projects || []).length === 0 ? (
-            <p className="text-muted">No data</p>
+            <p className="text-muted">{t('dashboard.noData')}</p>
           ) : (
             (data.insights?.projects || []).map((x) => (
-              <div key={x.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <div key={x.id} className="dashboard-row-item">
                 <span>📁 {x.name}</span>
                 <strong>{x.tickets}</strong>
               </div>
@@ -90,21 +90,21 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h2>Exceptions</h2>
+      <div className="card dashboard-section-card" style={{ marginBottom: 16 }}>
+        <h2>{t('dashboard.exceptions')}</h2>
         {(data.alerts?.staleOutUnits || []).slice(0, 8).map((u) => (
-          <div key={u.id} className="text-muted" style={{ marginBottom: 4 }}>
-            OUT too long: {u.id} {u.product ? `(${u.product})` : ''} since {new Date(u.since).toLocaleString()}
+          <div key={u.id} className="text-muted dashboard-line-item">
+            {t('dashboard.outTooLong')}: {u.id} {u.product ? `(${u.product})` : ''} {t('dashboard.since')} {new Date(u.since).toLocaleString()}
           </div>
         ))}
         {(data.alerts?.longOpenTickets || []).slice(0, 8).map((tk) => (
-          <div key={tk.id} className="text-muted" style={{ marginBottom: 4 }}>
-            Open too long: Ticket #{tk.id} {tk.foreman?.name || ''} / {tk.project?.name || ''} pending {tk.pending_units}
+          <div key={tk.id} className="text-muted dashboard-line-item">
+            {t('dashboard.openTooLong')}: {t('dashboard.ticket')} #{tk.id} {tk.foreman?.name || ''} / {tk.project?.name || ''} {t('dashboard.pending')} {tk.pending_units}
           </div>
         ))}
         {(data.alerts?.lowStockProducts || []).slice(0, 8).map((p) => (
-          <div key={p.id} className="text-muted" style={{ marginBottom: 4 }}>
-            Low stock: {p.name} in stock {p.in_stock}
+          <div key={p.id} className="text-muted dashboard-line-item">
+            {t('dashboard.lowStock')}: {p.name} {t('dashboard.inStockNow')} {p.in_stock}
           </div>
         ))}
       </div>
@@ -143,14 +143,15 @@ export default function Dashboard() {
 }
 
 function TrendLine({ label, item }) {
+  const { t } = useTranslation();
   if (!item) return null;
   const color = item.delta >= 0 ? 'var(--success)' : 'var(--danger)';
   const sign = item.delta >= 0 ? '+' : '';
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+    <div className="dashboard-row-item">
       <span>{label}</span>
       <span>
-        {item.thisWeek} <span className="text-muted">(prev {item.prevWeek})</span>{' '}
+        {item.thisWeek} <span className="text-muted">({t('dashboard.prev')} {item.prevWeek})</span>{' '}
         <strong style={{ color }}>{sign}{item.delta}</strong>
       </span>
     </div>

@@ -30,7 +30,7 @@ export default function Products() {
     setFeedback(null);
     try {
       await api.createProduct(form);
-      setFeedback({ type: 'success', message: `${t('products.name')} "${form.name}" ${t('common.save')}.` });
+      setFeedback({ type: 'success', message: `${t('products.name')} "${form.name}" ${t('products.saved')}.` });
       setForm({ name: '', manufacturer_barcode: '', size: '' });
       setShowForm(false);
       loadProducts();
@@ -40,10 +40,10 @@ export default function Products() {
   };
 
   const handleArchive = async (id) => {
-    if (requireConfirm && !window.confirm('Archive this product?')) return;
+    if (requireConfirm && !window.confirm(t('products.archiveConfirm'))) return;
     try {
       await api.deleteProduct(id);
-      setFeedback({ type: 'success', message: 'Product archived.' });
+      setFeedback({ type: 'success', message: t('products.archived') });
       loadProducts();
     } catch (err) {
       setFeedback({ type: 'error', message: err.message });
@@ -53,7 +53,7 @@ export default function Products() {
   const handleRestore = async (id) => {
     try {
       await api.restoreProduct(id);
-      setFeedback({ type: 'success', message: 'Product restored.' });
+      setFeedback({ type: 'success', message: t('products.restored') });
       loadProducts();
     } catch (err) {
       setFeedback({ type: 'error', message: err.message });
@@ -66,7 +66,7 @@ export default function Products() {
         <h1>{t('products.title')}</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost" onClick={() => setShowInactive((v) => !v)}>
-            {showInactive ? 'Hide Archived' : 'Show Archived'}
+            {showInactive ? t('common.hideArchived') : t('common.showArchived')}
           </button>
           <button className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
             {showForm ? t('common.cancel') : t('products.newProduct')}
@@ -77,7 +77,7 @@ export default function Products() {
       <div style={{ marginBottom: 8 }}>
         <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 13 }}>
           <input type="checkbox" checked={requireConfirm} onChange={(e) => setRequireConfirm(e.target.checked)} />
-          Require confirmation for destructive actions
+          {t('common.requireDestructiveConfirm')}
         </label>
       </div>
 
@@ -113,14 +113,14 @@ export default function Products() {
           <table>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>{t('common.id')}</th>
                 <th>{t('products.name')}</th>
                 <th>{t('products.barcode')}</th>
                 <th>{t('products.size')}</th>
                 <th>{t('products.units')}</th>
                 <th>{t('products.batches')}</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('common.status')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -132,12 +132,12 @@ export default function Products() {
                   <td>{p.size || '—'}</td>
                   <td>{p._count?.units ?? 0}</td>
                   <td>{p._count?.batches ?? 0}</td>
-                  <td>{p.is_active ? 'ACTIVE' : 'ARCHIVED'}</td>
+                  <td>{p.is_active ? t('common.active') : t('common.archived')}</td>
                   <td>
                     {p.is_active ? (
-                      <button type="button" className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleArchive(p.id)}>Archive</button>
+                      <button type="button" className="btn btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => handleArchive(p.id)}>{t('common.archive')}</button>
                     ) : (
-                      <button type="button" className="btn btn-ghost" onClick={() => handleRestore(p.id)}>Restore</button>
+                      <button type="button" className="btn btn-ghost" onClick={() => handleRestore(p.id)}>{t('common.restore')}</button>
                     )}
                   </td>
                 </tr>
