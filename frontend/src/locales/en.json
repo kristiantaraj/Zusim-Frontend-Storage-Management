@@ -38,7 +38,13 @@
     "foremen": "Foremen",
     "projects": "Projects",
     "tickets": "Tickets",
+    "settings": "Settings",
     "logout": "Logout"
+  },
+  "layout": {
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "workspaceHint": "Operations workspace"
   },
   "roles": {
     "manager": "Manager",
@@ -256,5 +262,13 @@
     "splitCreated": "Ticket split created.",
     "closedTicket": "Closed ticket #{{id}}",
     "reopenedTicket": "Reopened ticket #{{id}}"
+  },
+  "settings": {
+    "title": "Settings",
+    "interface": "Interface",
+    "destructiveConfirmTitle": "Require confirmation for destructive actions",
+    "destructiveConfirmHint": "Show a confirmation prompt before archive/delete actions.",
+    "compactSidebarTitle": "Use compact sidebar by default",
+    "compactSidebarHint": "Keep only icons visible in the left navigation."
   }
 }

@@ -19,7 +19,17 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1>{t('dashboard.title')}</h1>
+      <div className="dashboard-hero">
+        <div>
+          <h1>{t('dashboard.title')}</h1>
+          <p className="text-muted">{t('layout.workspaceHint')}</p>
+        </div>
+        <div className="dashboard-pills">
+          <span className="dashboard-pill">{t('dashboard.alerts')}: {(data.alerts?.staleOutUnits?.length || 0) + (data.alerts?.longOpenTickets?.length || 0) + (data.alerts?.lowStockProducts?.length || 0)}</span>
+          <span className="dashboard-pill">{t('dashboard.recentScans')}: {data.recentScans?.length || 0}</span>
+          <span className="dashboard-pill">{t('dashboard.weeklyTrends')}</span>
+        </div>
+      </div>
 
       <div className="card-grid">
         <StatCard value={data.totalProducts} label={t('dashboard.totalProducts')} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import Feedback from '../components/Feedback';
+import { useUiSettings } from '../context/UiSettingsContext';
 
 export default function Foremen() {
   const { t } = useTranslation();
@@ -10,7 +11,7 @@ export default function Foremen() {
   const [feedback, setFeedback] = useState(null);
   const [form, setForm] = useState({ name: '', icon: '' });
   const [showInactive, setShowInactive] = useState(false);
-  const [requireConfirm, setRequireConfirm] = useState(true);
+  const { destructiveConfirm } = useUiSettings();
 
   const loadForemen = () =>
     api
@@ -39,7 +40,7 @@ export default function Foremen() {
   };
 
   const handleDelete = async (id) => {
-    if (requireConfirm && !window.confirm(t('foremen.archiveConfirm'))) return;
+    if (destructiveConfirm && !window.confirm(t('foremen.archiveConfirm'))) return;
     setFeedback(null);
     try {
       await api.deleteForeman(id);
@@ -68,13 +69,6 @@ export default function Foremen() {
         <button className="btn btn-ghost" onClick={() => setShowInactive((v) => !v)}>
           {showInactive ? t('common.hideArchived') : t('common.showArchived')}
         </button>
-      </div>
-
-      <div style={{ marginBottom: 8 }}>
-        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 13 }}>
-          <input type="checkbox" checked={requireConfirm} onChange={(e) => setRequireConfirm(e.target.checked)} />
-          {t('common.requireDestructiveConfirm')}
-        </label>
       </div>
 
       {feedback && <Feedback message={feedback.message} type={feedback.type} />}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import Feedback from '../components/Feedback';
+import { useUiSettings } from '../context/UiSettingsContext';
 
 export default function Products() {
   const { t } = useTranslation();
@@ -11,7 +12,7 @@ export default function Products() {
   const [feedback, setFeedback] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
-  const [requireConfirm, setRequireConfirm] = useState(true);
+  const { destructiveConfirm } = useUiSettings();
 
   const loadProducts = () =>
     api
@@ -40,7 +41,7 @@ export default function Products() {
   };
 
   const handleArchive = async (id) => {
-    if (requireConfirm && !window.confirm(t('products.archiveConfirm'))) return;
+    if (destructiveConfirm && !window.confirm(t('products.archiveConfirm'))) return;
     try {
       await api.deleteProduct(id);
       setFeedback({ type: 'success', message: t('products.archived') });
@@ -72,13 +73,6 @@ export default function Products() {
             {showForm ? t('common.cancel') : t('products.newProduct')}
           </button>
         </div>
-      </div>
-
-      <div style={{ marginBottom: 8 }}>
-        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontSize: 13 }}>
-          <input type="checkbox" checked={requireConfirm} onChange={(e) => setRequireConfirm(e.target.checked)} />
-          {t('common.requireDestructiveConfirm')}
-        </label>
       </div>
 
       {feedback && <Feedback message={feedback.message} type={feedback.type} />}

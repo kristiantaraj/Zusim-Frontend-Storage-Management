@@ -38,7 +38,13 @@
     "foremen": "Brygadziści",
     "projects": "Projekty",
     "tickets": "Bilety",
+    "settings": "Ustawienia",
     "logout": "Wyloguj się"
+  },
+  "layout": {
+    "collapseSidebar": "Zwiń pasek boczny",
+    "expandSidebar": "Rozwiń pasek boczny",
+    "workspaceHint": "Panel operacyjny"
   },
   "roles": {
     "manager": "Menedżer",
@@ -256,5 +262,13 @@
     "splitCreated": "Utworzono podział zgłoszenia.",
     "closedTicket": "Zamknięto zgłoszenie #{{id}}",
     "reopenedTicket": "Ponownie otwarto zgłoszenie #{{id}}"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "interface": "Interfejs",
+    "destructiveConfirmTitle": "Wymagaj potwierdzenia dla działań destrukcyjnych",
+    "destructiveConfirmHint": "Pokaż potwierdzenie przed archiwizacją lub usuwaniem.",
+    "compactSidebarTitle": "Używaj domyślnie kompaktowego paska bocznego",
+    "compactSidebarHint": "W lewym menu pokazuj tylko ikony."
   }
 }
