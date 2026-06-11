@@ -139,6 +139,18 @@ const addHeaderRow = (sheet, headers) => {
   });
 };
 
+const encodeDispositionFilename = (filename) =>
+  encodeURIComponent(filename)
+    .replace(/['()]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
+    .replace(/\*/g, '%2A');
+
+const toAsciiFilename = (filename) =>
+  filename
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/\s+/g, '-');
+
 router.get(
   '/export.xlsx',
   [
@@ -310,9 +322,14 @@ router.get(
       const safeFrom = from.toISOString().slice(0, 10);
       const safeTo = to.toISOString().slice(0, 10);
       const filename = `${tr.filenamePrefix}-${tr.periodLabels[label] || label}-${safeFrom}-do-${safeTo}.xlsx`;
+      const asciiFilename = toAsciiFilename(filename);
+      const utf8Filename = encodeDispositionFilename(filename);
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${asciiFilename}"; filename*=UTF-8''${utf8Filename}`
+      );
 
       await workbook.xlsx.write(res);
       res.end();
