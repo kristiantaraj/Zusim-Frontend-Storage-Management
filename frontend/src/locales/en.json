@@ -90,7 +90,14 @@
     "unitId": "Unit ID",
     "product": "Product",
     "action": "Action",
-    "time": "Time"
+    "time": "Time",
+    "reportsTitle": "Reports Export",
+    "reportsHint": "Download weekly or monthly operational logs as Excel.",
+    "reportWeekly": "Weekly (last 7 days)",
+    "reportMonthly": "Monthly (last 30 days)",
+    "exportReport": "Export Excel",
+    "exportingReport": "Exporting...",
+    "reportDownloadFailed": "Failed to download report."
   },
   "products": {
     "title": "Products",

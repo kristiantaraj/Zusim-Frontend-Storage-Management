@@ -90,7 +90,14 @@
     "unitId": "ID Jednostki",
     "product": "Produkt",
     "action": "Akcja",
-    "time": "Czas"
+    "time": "Czas",
+    "reportsTitle": "Eksport raportów",
+    "reportsHint": "Pobierz tygodniowe lub miesięczne logi operacyjne w Excelu.",
+    "reportWeekly": "Tygodniowy (ostatnie 7 dni)",
+    "reportMonthly": "Miesięczny (ostatnie 30 dni)",
+    "exportReport": "Eksportuj Excel",
+    "exportingReport": "Eksportowanie...",
+    "reportDownloadFailed": "Nie udało się pobrać raportu."
   },
   "products": {
     "title": "Produkty",

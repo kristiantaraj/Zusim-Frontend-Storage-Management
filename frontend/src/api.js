@@ -72,12 +72,24 @@ async function requestCsv(path) {
   return text;
 }
 
+async function requestBlob(path) {
+  const res = await fetch(`${BASE}${path}`);
+  if (!res.ok) {
+    const text = await res.text();
+    const err = new Error(text || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return res.blob();
+}
+
 export const api = {
   health: () => request('GET', '/health'),
   healthDb: () => request('GET', '/health/db'),
 
   // Dashboard
   getDashboard: () => request('GET', '/dashboard'),
+  exportReportXlsx: (period = 'weekly') => requestBlob(`/reports/export.xlsx?period=${encodeURIComponent(period)}`),
 
   // Products
   getProducts: (includeInactive = false) => request('GET', `/products${includeInactive ? '?include_inactive=1' : ''}`),

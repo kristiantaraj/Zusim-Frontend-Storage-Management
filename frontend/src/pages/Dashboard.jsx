@@ -6,6 +6,8 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [reportPeriod, setReportPeriod] = useState('weekly');
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     api
@@ -13,6 +15,24 @@ export default function Dashboard() {
       .then(setData)
       .catch(() => setError(t('messages.failedToLoad')));
   }, [t]);
+
+  const handleExportReport = async () => {
+    setError('');
+    setReportLoading(true);
+    try {
+      const blob = await api.exportReportXlsx(reportPeriod);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `zusim-report-${reportPeriod}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (_err) {
+      setError(t('dashboard.reportDownloadFailed'));
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   if (error) return <p className="feedback feedback-error">{error}</p>;
   if (!data) return <p className="text-muted">{t('common.loading')}</p>;
@@ -28,6 +48,22 @@ export default function Dashboard() {
           <span className="dashboard-pill">{t('dashboard.alerts')}: {(data.alerts?.staleOutUnits?.length || 0) + (data.alerts?.longOpenTickets?.length || 0) + (data.alerts?.lowStockProducts?.length || 0)}</span>
           <span className="dashboard-pill">{t('dashboard.recentScans')}: {data.recentScans?.length || 0}</span>
           <span className="dashboard-pill">{t('dashboard.weeklyTrends')}</span>
+        </div>
+      </div>
+
+      <div className="card dashboard-report-controls" style={{ marginBottom: 16 }}>
+        <div>
+          <h2>{t('dashboard.reportsTitle')}</h2>
+          <p className="text-muted">{t('dashboard.reportsHint')}</p>
+        </div>
+        <div className="dashboard-report-actions">
+          <select value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)}>
+            <option value="weekly">{t('dashboard.reportWeekly')}</option>
+            <option value="monthly">{t('dashboard.reportMonthly')}</option>
+          </select>
+          <button className="btn btn-primary" onClick={handleExportReport} disabled={reportLoading}>
+            {reportLoading ? t('dashboard.exportingReport') : t('dashboard.exportReport')}
+          </button>
         </div>
       </div>
 

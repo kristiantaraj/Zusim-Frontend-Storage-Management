@@ -1015,6 +1015,28 @@ tr:hover td { background: #f7f9fd; }
   color: var(--text-muted);
 }
 
+.dashboard-report-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-report-controls h2 {
+  margin-bottom: 0.2rem;
+}
+
+.dashboard-report-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.dashboard-report-actions select {
+  min-width: 220px;
+}
+
 @media (max-width: 980px) {
   .dashboard-grid,
   .dashboard-grid-3 {
