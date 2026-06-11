@@ -14,8 +14,13 @@ const safeQuery = async (queryFn, fallback) => {
     return await queryFn();
   } catch (err) {
     console.error('[dashboard] query failed:', err?.code || 'NO_CODE', err?.message || err);
-    if (typeof fallback === 'function') return fallback(err);
-    return fallback;
+    try {
+      if (typeof fallback === 'function') return await fallback(err);
+      return fallback;
+    } catch (fallbackErr) {
+      console.error('[dashboard] fallback failed:', fallbackErr?.code || 'NO_CODE', fallbackErr?.message || fallbackErr);
+      return typeof fallback === 'function' ? null : fallback;
+    }
   }
 };
 

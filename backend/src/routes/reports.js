@@ -5,6 +5,15 @@ const prisma = require('../db');
 
 const router = express.Router();
 
+const safeQuery = async (tag, queryFn, fallback) => {
+  try {
+    return await queryFn();
+  } catch (err) {
+    console.error(`[reports] ${tag} failed:`, err?.code || 'NO_CODE', err?.message || err);
+    return fallback;
+  }
+};
+
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -62,56 +71,61 @@ router.get(
       const toDate = req.query.to_date;
       const { from, to, label } = getRange(period, fromDate, toDate);
 
-      const [
-        scans,
-        tickets,
-        printJobs,
-        inCount,
-        outCount,
-        usedCount,
-      ] = await Promise.all([
-        prisma.scanEvent.findMany({
-          where: { scanned_at: { gte: from, lte: to } },
-          orderBy: { scanned_at: 'asc' },
-          include: {
-            unit: {
-              select: {
-                id: true,
-                product: { select: { name: true } },
+      const [scans, tickets, printJobs, inCount, outCount, usedCount] = await Promise.all([
+        safeQuery(
+          'scan logs',
+          () =>
+            prisma.scanEvent.findMany({
+              where: { scanned_at: { gte: from, lte: to } },
+              orderBy: { scanned_at: 'asc' },
+              include: {
+                unit: {
+                  select: {
+                    id: true,
+                    product: { select: { name: true } },
+                  },
+                },
+                foreman: { select: { name: true } },
               },
-            },
-            foreman: { select: { name: true } },
-          },
-        }),
-        prisma.ticket.findMany({
-          where: {
-            OR: [
-              { opened_at: { gte: from, lte: to } },
-              { closed_at: { gte: from, lte: to } },
-            ],
-          },
-          orderBy: { opened_at: 'asc' },
-          include: {
-            foreman: { select: { name: true } },
-            project: { select: { name: true } },
-            ticket_units: { select: { id: true, returned: true } },
-          },
-        }),
-        prisma.printJob.findMany({
-          where: { created_at: { gte: from, lte: to } },
-          orderBy: { created_at: 'asc' },
-          include: {
-            unit: {
-              select: {
-                id: true,
-                product: { select: { name: true } },
+            }),
+          []
+        ),
+        safeQuery(
+          'ticket logs',
+          () =>
+            prisma.ticket.findMany({
+              where: {
+                OR: [{ opened_at: { gte: from, lte: to } }, { closed_at: { gte: from, lte: to } }],
               },
-            },
-          },
-        }),
-        prisma.unit.count({ where: { status: 'IN' } }),
-        prisma.unit.count({ where: { status: 'OUT' } }),
-        prisma.unit.count({ where: { status: 'USED' } }),
+              orderBy: { opened_at: 'asc' },
+              include: {
+                foreman: { select: { name: true } },
+                project: { select: { name: true } },
+                ticket_units: { select: { id: true, returned: true } },
+              },
+            }),
+          []
+        ),
+        safeQuery(
+          'print logs',
+          () =>
+            prisma.printJob.findMany({
+              where: { created_at: { gte: from, lte: to } },
+              orderBy: { created_at: 'asc' },
+              include: {
+                unit: {
+                  select: {
+                    id: true,
+                    product: { select: { name: true } },
+                  },
+                },
+              },
+            }),
+          []
+        ),
+        safeQuery('unit count IN', () => prisma.unit.count({ where: { status: 'IN' } }), 0),
+        safeQuery('unit count OUT', () => prisma.unit.count({ where: { status: 'OUT' } }), 0),
+        safeQuery('unit count USED', () => prisma.unit.count({ where: { status: 'USED' } }), 0),
       ]);
 
       const workbook = new ExcelJS.Workbook();
