@@ -95,6 +95,8 @@
     "reportsHint": "Pobierz tygodniowe lub miesięczne logi operacyjne w Excelu.",
     "reportWeekly": "Tygodniowy (ostatnie 7 dni)",
     "reportMonthly": "Miesięczny (ostatnie 30 dni)",
+    "reportLanguagePl": "Polski",
+    "reportLanguageEn": "Angielski",
     "exportReport": "Eksportuj Excel",
     "exportingReport": "Eksportowanie...",
     "reportDownloadFailed": "Nie udało się pobrać raportu."

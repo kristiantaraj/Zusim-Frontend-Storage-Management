@@ -95,6 +95,8 @@
     "reportsHint": "Download weekly or monthly operational logs as Excel.",
     "reportWeekly": "Weekly (last 7 days)",
     "reportMonthly": "Monthly (last 30 days)",
+    "reportLanguagePl": "Polish",
+    "reportLanguageEn": "English",
     "exportReport": "Export Excel",
     "exportingReport": "Exporting...",
     "reportDownloadFailed": "Failed to download report."

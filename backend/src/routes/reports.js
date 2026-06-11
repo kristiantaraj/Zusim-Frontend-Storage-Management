@@ -5,6 +5,89 @@ const prisma = require('../db');
 
 const router = express.Router();
 
+const REPORT_I18N = {
+  pl: {
+    sheets: {
+      summary: 'Podsumowanie',
+      scans: 'Logi skanowan',
+      tickets: 'Logi zgloszen',
+      prints: 'Logi wydrukow',
+    },
+    summaryHeader: ['Metryka', 'Wartosc'],
+    summaryRows: {
+      period: 'Okres raportu',
+      from: 'Od',
+      to: 'Do',
+      scanEvents: 'Zdarzenia skanowania',
+      ticketsInPeriod: 'Zgloszenia otwarte/zamkniete w okresie',
+      printJobsInPeriod: 'Wydruki w okresie',
+      currentIn: 'Aktualne jednostki IN',
+      currentOut: 'Aktualne jednostki OUT',
+      currentUsed: 'Aktualne jednostki USED',
+    },
+    scansHeader: ['Czas skanu', 'ID jednostki', 'Produkt', 'Akcja', 'Brygadzista', 'Notatka'],
+    ticketsHeader: [
+      'ID zgloszenia',
+      'Status',
+      'Brygadzista',
+      'Projekt',
+      'Otwarte',
+      'Zamkniete',
+      'Zamkniete przez',
+      'Liczba jednostek',
+      'Oczekujace jednostki',
+      'Notatka',
+    ],
+    printsHeader: ['Utworzono', 'ID jednostki', 'Produkt', 'Status', 'Zlecil', 'Blad'],
+    periodLabels: {
+      weekly: 'tygodniowy',
+      monthly: 'miesieczny',
+      custom: 'niestandardowy',
+    },
+    filenamePrefix: 'raport-zusim',
+  },
+  en: {
+    sheets: {
+      summary: 'Summary',
+      scans: 'Scan Logs',
+      tickets: 'Ticket Logs',
+      prints: 'Print Logs',
+    },
+    summaryHeader: ['Metric', 'Value'],
+    summaryRows: {
+      period: 'Report Period',
+      from: 'From',
+      to: 'To',
+      scanEvents: 'Scan Events',
+      ticketsInPeriod: 'Tickets Opened/Closed in Period',
+      printJobsInPeriod: 'Print Jobs in Period',
+      currentIn: 'Current Units IN',
+      currentOut: 'Current Units OUT',
+      currentUsed: 'Current Units USED',
+    },
+    scansHeader: ['Scanned At', 'Unit ID', 'Product', 'Action', 'Foreman', 'Note'],
+    ticketsHeader: [
+      'Ticket ID',
+      'Status',
+      'Foreman',
+      'Project',
+      'Opened At',
+      'Closed At',
+      'Closed By',
+      'Total Units',
+      'Pending Units',
+      'Note',
+    ],
+    printsHeader: ['Created At', 'Unit ID', 'Product', 'Status', 'Requested By', 'Error'],
+    periodLabels: {
+      weekly: 'weekly',
+      monthly: 'monthly',
+      custom: 'custom',
+    },
+    filenamePrefix: 'zusim-report',
+  },
+};
+
 const safeQuery = async (tag, queryFn, fallback) => {
   try {
     return await queryFn();
@@ -60,6 +143,7 @@ router.get(
   '/export.xlsx',
   [
     query('period').optional().isIn(['weekly', 'monthly']),
+    query('lang').optional().isIn(['pl', 'en']),
     query('from_date').optional().isISO8601(),
     query('to_date').optional().isISO8601(),
   ],
@@ -67,6 +151,8 @@ router.get(
   async (req, res) => {
     try {
       const period = req.query.period || 'weekly';
+      const lang = req.query.lang === 'en' ? 'en' : 'pl';
+      const tr = REPORT_I18N[lang];
       const fromDate = req.query.from_date;
       const toDate = req.query.to_date;
       const { from, to, label } = getRange(period, fromDate, toDate);
@@ -132,23 +218,23 @@ router.get(
       workbook.creator = 'Zusim';
       workbook.created = new Date();
 
-      const summarySheet = workbook.addWorksheet('Summary');
-      addHeaderRow(summarySheet, ['Metric', 'Value']);
+      const summarySheet = workbook.addWorksheet(tr.sheets.summary);
+      addHeaderRow(summarySheet, tr.summaryHeader);
       summarySheet.addRows([
-        ['Report Period', label],
-        ['From', from.toISOString()],
-        ['To', to.toISOString()],
-        ['Scan Events', scans.length],
-        ['Tickets Opened/Closed in Period', tickets.length],
-        ['Print Jobs in Period', printJobs.length],
-        ['Current Units IN', inCount],
-        ['Current Units OUT', outCount],
-        ['Current Units USED', usedCount],
+        [tr.summaryRows.period, tr.periodLabels[label] || label],
+        [tr.summaryRows.from, from.toISOString()],
+        [tr.summaryRows.to, to.toISOString()],
+        [tr.summaryRows.scanEvents, scans.length],
+        [tr.summaryRows.ticketsInPeriod, tickets.length],
+        [tr.summaryRows.printJobsInPeriod, printJobs.length],
+        [tr.summaryRows.currentIn, inCount],
+        [tr.summaryRows.currentOut, outCount],
+        [tr.summaryRows.currentUsed, usedCount],
       ]);
       summarySheet.columns = [{ width: 36 }, { width: 24 }];
 
-      const scansSheet = workbook.addWorksheet('Scan Logs');
-      addHeaderRow(scansSheet, ['Scanned At', 'Unit ID', 'Product', 'Action', 'Foreman', 'Note']);
+      const scansSheet = workbook.addWorksheet(tr.sheets.scans);
+      addHeaderRow(scansSheet, tr.scansHeader);
       scans.forEach((event) => {
         scansSheet.addRow([
           event.scanned_at.toISOString(),
@@ -168,19 +254,8 @@ router.get(
         { width: 42 },
       ];
 
-      const ticketsSheet = workbook.addWorksheet('Ticket Logs');
-      addHeaderRow(ticketsSheet, [
-        'Ticket ID',
-        'Status',
-        'Foreman',
-        'Project',
-        'Opened At',
-        'Closed At',
-        'Closed By',
-        'Total Units',
-        'Pending Units',
-        'Note',
-      ]);
+      const ticketsSheet = workbook.addWorksheet(tr.sheets.tickets);
+      addHeaderRow(ticketsSheet, tr.ticketsHeader);
       tickets.forEach((ticket) => {
         const totalUnits = ticket.ticket_units.length;
         const pendingUnits = ticket.ticket_units.filter((unit) => !unit.returned).length;
@@ -211,8 +286,8 @@ router.get(
         { width: 40 },
       ];
 
-      const printSheet = workbook.addWorksheet('Print Logs');
-      addHeaderRow(printSheet, ['Created At', 'Unit ID', 'Product', 'Status', 'Requested By', 'Error']);
+      const printSheet = workbook.addWorksheet(tr.sheets.prints);
+      addHeaderRow(printSheet, tr.printsHeader);
       printJobs.forEach((job) => {
         printSheet.addRow([
           job.created_at.toISOString(),
@@ -234,7 +309,7 @@ router.get(
 
       const safeFrom = from.toISOString().slice(0, 10);
       const safeTo = to.toISOString().slice(0, 10);
-      const filename = `zusim-report-${label}-${safeFrom}-to-${safeTo}.xlsx`;
+      const filename = `${tr.filenamePrefix}-${tr.periodLabels[label] || label}-${safeFrom}-do-${safeTo}.xlsx`;
 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

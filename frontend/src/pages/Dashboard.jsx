@@ -7,6 +7,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [reportPeriod, setReportPeriod] = useState('weekly');
+  const [reportLanguage, setReportLanguage] = useState('pl');
   const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
@@ -20,11 +21,15 @@ export default function Dashboard() {
     setError('');
     setReportLoading(true);
     try {
-      const blob = await api.exportReportXlsx(reportPeriod);
+      const blob = await api.exportReportXlsx(reportPeriod, reportLanguage);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `zusim-report-${reportPeriod}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const periodLabel = reportLanguage === 'pl'
+        ? (reportPeriod === 'monthly' ? 'miesieczny' : 'tygodniowy')
+        : reportPeriod;
+      const filePrefix = reportLanguage === 'pl' ? 'raport-zusim' : 'zusim-report';
+      a.download = `${filePrefix}-${periodLabel}-${new Date().toISOString().slice(0, 10)}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (_err) {
@@ -60,6 +65,10 @@ export default function Dashboard() {
           <select value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)}>
             <option value="weekly">{t('dashboard.reportWeekly')}</option>
             <option value="monthly">{t('dashboard.reportMonthly')}</option>
+          </select>
+          <select value={reportLanguage} onChange={(e) => setReportLanguage(e.target.value)}>
+            <option value="pl">{t('dashboard.reportLanguagePl')}</option>
+            <option value="en">{t('dashboard.reportLanguageEn')}</option>
           </select>
           <button className="btn btn-primary" onClick={handleExportReport} disabled={reportLoading}>
             {reportLoading ? t('dashboard.exportingReport') : t('dashboard.exportReport')}
