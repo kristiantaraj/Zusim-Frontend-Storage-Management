@@ -134,6 +134,7 @@
     "batchSelected": "Partia",
     "numberOfUnits": "Liczba jednostek",
     "generateUnits": "Generuj jednostki →",
+    "generatingUnits": "Generowanie...",
     "batchCreated": "utworzona dla",
     "unitsGenerated": "jednostka(i) wygenerowana(e).",
     "reviewIds": "jednostka(i) wygenerowana(e). Przejrzyj identyfikatory, a następnie wyślij na drukarkę.",

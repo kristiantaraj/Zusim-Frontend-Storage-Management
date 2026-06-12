@@ -134,6 +134,7 @@
     "batchSelected": "Batch",
     "numberOfUnits": "Number of Units",
     "generateUnits": "Generate Units →",
+    "generatingUnits": "Generating...",
     "batchCreated": "created for",
     "unitsGenerated": "unit(s) generated.",
     "reviewIds": "unit(s) generated. Review IDs then send to printer.",

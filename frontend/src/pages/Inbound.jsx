@@ -23,6 +23,7 @@ export default function Inbound() {
   const [generatedUnits, setGeneratedUnits] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [printing, setPrinting] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [step, setStep] = useState(1); // 1: select product, 2: generate, 3: print
 
   useEffect(() => {
@@ -40,8 +41,10 @@ export default function Inbound() {
   // Step 1: select product and generate batch
   const handleSelectProduct = async (e) => {
     e.preventDefault();
+    if (generating) return;
     setFeedback(null);
     if (!form.product_id) return;
+    setGenerating(true);
 
     try {
       // Create a batch automatically for demo
@@ -62,6 +65,8 @@ export default function Inbound() {
       setFeedback({ type: 'success', message: `${result.count} ${t('inbound.unitsGenerated')}` });
     } catch (err) {
       setFeedback({ type: 'error', message: err.message });
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -121,6 +126,7 @@ export default function Inbound() {
               <select
                 value={form.product_id}
                 onChange={(e) => setForm({ ...form, product_id: e.target.value })}
+                disabled={generating}
                 required
               >
                 <option value="">{t('inbound.selectProduct')}…</option>
@@ -139,12 +145,13 @@ export default function Inbound() {
                 max="500"
                 value={quantity}
                 onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
+                disabled={generating}
                 required
                 style={{ maxWidth: 160 }}
               />
             </div>
-            <button type="submit" className="btn btn-primary" disabled={!form.product_id}>
-              {t('inbound.generateUnits')}
+            <button type="submit" className="btn btn-primary" disabled={!form.product_id || generating}>
+              {generating ? t('inbound.generatingUnits') : t('inbound.generateUnits')}
             </button>
           </form>
         </div>
