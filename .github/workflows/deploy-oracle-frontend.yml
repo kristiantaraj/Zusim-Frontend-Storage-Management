@@ -36,6 +36,7 @@ jobs:
             cat <<'ENVEOF' > .env.production
             VITE_API_BASE_URL=/api
             VITE_MANAGER_PASSWORD=${{ secrets.VITE_MANAGER_PASSWORD }}
+            VITE_OWNER_PASSWORD=${{ secrets.VITE_OWNER_PASSWORD }}
             ENVEOF
             npm ci
             npm run build

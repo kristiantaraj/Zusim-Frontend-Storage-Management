@@ -18,6 +18,8 @@ const REPORT_I18N = {
       period: 'Okres raportu',
       from: 'Od',
       to: 'Do',
+      generatedAt: 'Utworzono raport',
+      product: 'Produkt',
       scanEvents: 'Zdarzenia skanowania',
       ticketsInPeriod: 'Zgłoszenia otwarte/zamknięte w okresie',
       printJobsInPeriod: 'Wydruki w okresie',
@@ -58,6 +60,8 @@ const REPORT_I18N = {
       period: 'Report Period',
       from: 'From',
       to: 'To',
+      generatedAt: 'Report Generated At',
+      product: 'Product',
       scanEvents: 'Scan Events',
       ticketsInPeriod: 'Tickets Opened/Closed in Period',
       printJobsInPeriod: 'Print Jobs in Period',
@@ -156,6 +160,7 @@ router.get(
   [
     query('period').optional().isIn(['weekly', 'monthly']),
     query('lang').optional().isIn(['pl', 'en']),
+    query('product_id').optional().isInt({ min: 1 }),
     query('from_date').optional().isISO8601(),
     query('to_date').optional().isISO8601(),
   ],
@@ -165,16 +170,59 @@ router.get(
       const period = req.query.period || 'weekly';
       const lang = req.query.lang === 'en' ? 'en' : 'pl';
       const tr = REPORT_I18N[lang];
+      const productId = req.query.product_id ? parseInt(req.query.product_id, 10) : null;
       const fromDate = req.query.from_date;
       const toDate = req.query.to_date;
       const { from, to, label } = getRange(period, fromDate, toDate);
+      const generatedAt = new Date();
 
-      const [scans, tickets, printJobs, inCount, outCount, usedCount] = await Promise.all([
+      const ticketPeriodFilter = {
+        OR: [{ opened_at: { gte: from, lte: to } }, { closed_at: { gte: from, lte: to } }],
+      };
+
+      const ticketFilter = productId
+        ? {
+            AND: [
+              ticketPeriodFilter,
+              {
+                ticket_units: {
+                  some: {
+                    unit: {
+                      product_id: productId,
+                    },
+                  },
+                },
+              },
+            ],
+          }
+        : ticketPeriodFilter;
+
+      const [selectedProduct, scans, tickets, printJobs, inCount, outCount, usedCount] = await Promise.all([
+        productId
+          ? safeQuery(
+              'selected product',
+              () =>
+                prisma.product.findUnique({
+                  where: { id: productId },
+                  select: { name: true },
+                }),
+              null
+            )
+          : Promise.resolve(null),
         safeQuery(
           'scan logs',
           () =>
             prisma.scanEvent.findMany({
-              where: { scanned_at: { gte: from, lte: to } },
+              where: {
+                scanned_at: { gte: from, lte: to },
+                ...(productId
+                  ? {
+                      unit: {
+                        product_id: productId,
+                      },
+                    }
+                  : {}),
+              },
               orderBy: { scanned_at: 'asc' },
               include: {
                 unit: {
@@ -192,14 +240,23 @@ router.get(
           'ticket logs',
           () =>
             prisma.ticket.findMany({
-              where: {
-                OR: [{ opened_at: { gte: from, lte: to } }, { closed_at: { gte: from, lte: to } }],
-              },
+              where: ticketFilter,
               orderBy: { opened_at: 'asc' },
               include: {
                 foreman: { select: { name: true } },
                 project: { select: { name: true } },
-                ticket_units: { select: { id: true, returned: true } },
+                ticket_units: {
+                  ...(productId
+                    ? {
+                        where: {
+                          unit: {
+                            product_id: productId,
+                          },
+                        },
+                      }
+                    : {}),
+                  select: { id: true, returned: true },
+                },
               },
             }),
           []
@@ -208,7 +265,16 @@ router.get(
           'print logs',
           () =>
             prisma.printJob.findMany({
-              where: { created_at: { gte: from, lte: to } },
+              where: {
+                created_at: { gte: from, lte: to },
+                ...(productId
+                  ? {
+                      unit: {
+                        product_id: productId,
+                      },
+                    }
+                  : {}),
+              },
               orderBy: { created_at: 'asc' },
               include: {
                 unit: {
@@ -221,9 +287,9 @@ router.get(
             }),
           []
         ),
-        safeQuery('unit count IN', () => prisma.unit.count({ where: { status: 'IN' } }), 0),
-        safeQuery('unit count OUT', () => prisma.unit.count({ where: { status: 'OUT' } }), 0),
-        safeQuery('unit count USED', () => prisma.unit.count({ where: { status: 'USED' } }), 0),
+        safeQuery('unit count IN', () => prisma.unit.count({ where: { status: 'IN', ...(productId ? { product_id: productId } : {}) } }), 0),
+        safeQuery('unit count OUT', () => prisma.unit.count({ where: { status: 'OUT', ...(productId ? { product_id: productId } : {}) } }), 0),
+        safeQuery('unit count USED', () => prisma.unit.count({ where: { status: 'USED', ...(productId ? { product_id: productId } : {}) } }), 0),
       ]);
 
       const workbook = new ExcelJS.Workbook();
@@ -236,6 +302,11 @@ router.get(
         [tr.summaryRows.period, tr.periodLabels[label] || label],
         [tr.summaryRows.from, from.toISOString()],
         [tr.summaryRows.to, to.toISOString()],
+        [tr.summaryRows.generatedAt, generatedAt.toISOString()],
+        [
+          tr.summaryRows.product,
+          selectedProduct?.name || (productId ? `#${productId}` : (lang === 'pl' ? 'Wszystkie produkty' : 'All products')),
+        ],
         [tr.summaryRows.scanEvents, scans.length],
         [tr.summaryRows.ticketsInPeriod, tickets.length],
         [tr.summaryRows.printJobsInPeriod, printJobs.length],
@@ -321,7 +392,10 @@ router.get(
 
       const safeFrom = from.toISOString().slice(0, 10);
       const safeTo = to.toISOString().slice(0, 10);
-      const filename = `${tr.filenamePrefix}-${tr.periodLabels[label] || label}-${safeFrom}-do-${safeTo}.xlsx`;
+      const productSuffix = selectedProduct?.name
+        ? `-${selectedProduct.name.replace(/[^a-zA-Z0-9\s-]/g, '').trim().replace(/\s+/g, '-')}`
+        : '';
+      const filename = `${tr.filenamePrefix}-${tr.periodLabels[label] || label}${productSuffix}-${safeFrom}-do-${safeTo}.xlsx`;
       const asciiFilename = toAsciiFilename(filename);
       const utf8Filename = encodeDispositionFilename(filename);
 

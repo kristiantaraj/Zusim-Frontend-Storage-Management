@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import Feedback from '../components/Feedback';
 import { generateBatchZpl, printWithBrowserPrint } from '../printing';
+import { useRole } from '../context/RoleContext';
 
 export default function Units() {
   const { t } = useTranslation();
+  const { role } = useRole();
   const readStoredNumber = (key, fallback) => {
     const raw = window.localStorage.getItem(key);
     const parsed = Number(raw);
@@ -210,50 +212,57 @@ export default function Units() {
 
       {feedback && <Feedback message={feedback.message} type={feedback.type} />}
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ marginBottom: 10 }}>{t('units.manualCorrection')}</h2>
-        <form onSubmit={submitForce}>
-          <div className="row">
-            <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-              <label>{t('units.unitId')}</label>
-              <input value={forceForm.unit_id} onChange={(e) => setForceForm((f) => ({ ...f, unit_id: e.target.value }))} placeholder="HP-2026-000001" required />
+      {role === 'owner' ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h2 style={{ marginBottom: 10 }}>{t('units.manualCorrection')}</h2>
+          <form onSubmit={submitForce}>
+            <div className="row">
+              <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
+                <label>{t('units.unitId')}</label>
+                <input value={forceForm.unit_id} onChange={(e) => setForceForm((f) => ({ ...f, unit_id: e.target.value }))} placeholder="HP-2026-000001" required />
+              </div>
+              <div className="form-group" style={{ width: 130, marginBottom: 0 }}>
+                <label>{t('common.status')}</label>
+                <select value={forceForm.status} onChange={(e) => setForceForm((f) => ({ ...f, status: e.target.value }))}>
+                  <option value="IN">IN</option>
+                  <option value="OUT">OUT</option>
+                  <option value="USED">USED</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ width: 160, marginBottom: 0 }}>
+                <label>{t('units.reasonCode')}</label>
+                <input value={forceForm.reason_code} onChange={(e) => setForceForm((f) => ({ ...f, reason_code: e.target.value }))} required />
+              </div>
+              <div className="form-group" style={{ flex: 1, minWidth: 220, marginBottom: 0 }}>
+                <label>{t('common.note')}</label>
+                <input value={forceForm.note} onChange={(e) => setForceForm((f) => ({ ...f, note: e.target.value }))} placeholder={t('units.explainCorrection')} />
+              </div>
+              <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
+                <label>{t('units.foremanOptional')}</label>
+                <select value={forceForm.foreman_id} onChange={(e) => setForceForm((f) => ({ ...f, foreman_id: e.target.value }))}>
+                  <option value="">—</option>
+                  {foremen.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </select>
+              </div>
+              <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
+                <label>{t('units.projectOptional')}</label>
+                <select value={forceForm.project_id} onChange={(e) => setForceForm((f) => ({ ...f, project_id: e.target.value }))}>
+                  <option value="">—</option>
+                  {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'end' }}>
+                <button className="btn btn-primary" type="submit">{t('units.forceUpdate')}</button>
+              </div>
             </div>
-            <div className="form-group" style={{ width: 130, marginBottom: 0 }}>
-              <label>{t('common.status')}</label>
-              <select value={forceForm.status} onChange={(e) => setForceForm((f) => ({ ...f, status: e.target.value }))}>
-                <option value="IN">IN</option>
-                <option value="OUT">OUT</option>
-                <option value="USED">USED</option>
-              </select>
-            </div>
-            <div className="form-group" style={{ width: 160, marginBottom: 0 }}>
-              <label>{t('units.reasonCode')}</label>
-              <input value={forceForm.reason_code} onChange={(e) => setForceForm((f) => ({ ...f, reason_code: e.target.value }))} required />
-            </div>
-            <div className="form-group" style={{ flex: 1, minWidth: 220, marginBottom: 0 }}>
-              <label>{t('common.note')}</label>
-              <input value={forceForm.note} onChange={(e) => setForceForm((f) => ({ ...f, note: e.target.value }))} placeholder={t('units.explainCorrection')} />
-            </div>
-            <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-              <label>{t('units.foremanOptional')}</label>
-              <select value={forceForm.foreman_id} onChange={(e) => setForceForm((f) => ({ ...f, foreman_id: e.target.value }))}>
-                <option value="">—</option>
-                {foremen.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-              </select>
-            </div>
-            <div className="form-group" style={{ width: 180, marginBottom: 0 }}>
-              <label>{t('units.projectOptional')}</label>
-              <select value={forceForm.project_id} onChange={(e) => setForceForm((f) => ({ ...f, project_id: e.target.value }))}>
-                <option value="">—</option>
-                {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'end' }}>
-              <button className="btn btn-primary" type="submit">{t('units.forceUpdate')}</button>
-            </div>
-          </div>
-        </form>
-      </div>
+          </form>
+        </div>
+      ) : (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h2 style={{ marginBottom: 10 }}>{t('units.manualCorrection')}</h2>
+          <p className="text-muted">{t('units.manualCorrectionOwnerOnly')}</p>
+        </div>
+      )}
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="row">

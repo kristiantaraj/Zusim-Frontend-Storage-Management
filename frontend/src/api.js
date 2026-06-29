@@ -89,8 +89,18 @@ export const api = {
 
   // Dashboard
   getDashboard: () => request('GET', '/dashboard'),
-  exportReportXlsx: (period = 'weekly', lang = 'pl') =>
-    requestBlob(`/reports/export.xlsx?period=${encodeURIComponent(period)}&lang=${encodeURIComponent(lang)}`),
+  exportReportXlsx: (period = 'weekly', lang = 'pl', productId = '') => {
+    const params = new URLSearchParams({
+      period: String(period),
+      lang: String(lang),
+    });
+
+    if (productId) {
+      params.set('product_id', String(productId));
+    }
+
+    return requestBlob(`/reports/export.xlsx?${params.toString()}`);
+  },
 
   // Products
   getProducts: (includeInactive = false) => request('GET', `/products${includeInactive ? '?include_inactive=1' : ''}`),

@@ -6,10 +6,12 @@ import logo from '../../zusim_logo_white.svg';
 
 export default function RoleSelector() {
   const { t } = useTranslation();
-  const { selectOperator, unlockManager } = useRole();
+  const { selectOperator, unlockManager, unlockOwner } = useRole();
   const navigate = useNavigate();
   const [managerPassword, setManagerPassword] = useState('');
-  const [error, setError] = useState('');
+  const [ownerPassword, setOwnerPassword] = useState('');
+  const [managerError, setManagerError] = useState('');
+  const [ownerError, setOwnerError] = useState('');
 
   const selectRole = (selectedRole) => {
     if (selectedRole === 'operator') {
@@ -18,21 +20,40 @@ export default function RoleSelector() {
       return;
     }
 
+    if (selectedRole === 'owner') {
+      const result = unlockOwner(ownerPassword);
+
+      if (result.ok) {
+        setOwnerError('');
+        setOwnerPassword('');
+        navigate('/');
+        return;
+      }
+
+      if (result.reason === 'missing-config') {
+        setOwnerError(t('roles.ownerPasswordMissingConfig'));
+        return;
+      }
+
+      setOwnerError(t('roles.ownerPasswordInvalid'));
+      return;
+    }
+
     const result = unlockManager(managerPassword);
 
     if (result.ok) {
-      setError('');
+      setManagerError('');
       setManagerPassword('');
       navigate('/');
       return;
     }
 
     if (result.reason === 'missing-config') {
-      setError(t('roles.managerPasswordMissingConfig'));
+      setManagerError(t('roles.managerPasswordMissingConfig'));
       return;
     }
 
-    setError(t('roles.managerPasswordInvalid'));
+    setManagerError(t('roles.managerPasswordInvalid'));
   };
 
   return (
@@ -62,14 +83,44 @@ export default function RoleSelector() {
               }}
               placeholder={t('roles.managerPasswordPlaceholder')}
             />
-            {error && (
+            {managerError && (
               <div className="role-manager-error">
-                {error}
+                {managerError}
+              </div>
+            )}
+          </div>
+
+          <div className="role-manager-access">
+            <label htmlFor="owner-password" className="text-muted role-manager-label">
+            {t('roles.ownerPasswordLabel')}
+            </label>
+            <input
+              id="owner-password"
+              type="password"
+              value={ownerPassword}
+              onChange={(e) => setOwnerPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  selectRole('owner');
+                }
+              }}
+              placeholder={t('roles.ownerPasswordPlaceholder')}
+            />
+            {ownerError && (
+              <div className="role-manager-error">
+                {ownerError}
               </div>
             )}
           </div>
 
           <div className="role-choice-grid">
+            <button
+              className="btn btn-primary role-choice-btn role-choice-manager"
+              onClick={() => selectRole('owner')}
+            >
+              <div className="role-choice-icon">🛡️</div>
+              <div className="role-choice-title">{t('roles.owner')}</div>
+            </button>
             <button
               className="btn btn-primary role-choice-btn role-choice-manager"
               onClick={() => selectRole('manager')}

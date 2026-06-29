@@ -8,6 +8,8 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [reportPeriod, setReportPeriod] = useState('weekly');
   const [reportLanguage, setReportLanguage] = useState('pl');
+  const [reportProductId, setReportProductId] = useState('');
+  const [products, setProducts] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
@@ -17,11 +19,18 @@ export default function Dashboard() {
       .catch(() => setError(t('messages.failedToLoad')));
   }, [t]);
 
+  useEffect(() => {
+    api
+      .getProducts()
+      .then(setProducts)
+      .catch(() => {});
+  }, []);
+
   const handleExportReport = async () => {
     setError('');
     setReportLoading(true);
     try {
-      const blob = await api.exportReportXlsx(reportPeriod, reportLanguage);
+      const blob = await api.exportReportXlsx(reportPeriod, reportLanguage, reportProductId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -65,6 +74,12 @@ export default function Dashboard() {
           <select value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)}>
             <option value="weekly">{t('dashboard.reportWeekly')}</option>
             <option value="monthly">{t('dashboard.reportMonthly')}</option>
+          </select>
+          <select value={reportProductId} onChange={(e) => setReportProductId(e.target.value)}>
+            <option value="">{t('dashboard.reportAllProducts')}</option>
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>{product.name}</option>
+            ))}
           </select>
           <select value={reportLanguage} onChange={(e) => setReportLanguage(e.target.value)}>
             <option value="pl">{t('dashboard.reportLanguagePl')}</option>

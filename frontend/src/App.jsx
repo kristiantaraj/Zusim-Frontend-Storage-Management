@@ -43,7 +43,7 @@ function ManagerView() {
 }
 
 function AppRoutes() {
-  const { role, managerAuthenticated } = useRole();
+  const { role, managerAuthenticated, ownerAuthenticated } = useRole();
 
   if (!role) {
     return <RoleSelector />;
@@ -53,7 +53,12 @@ function AppRoutes() {
     return <OperatorView />;
   }
 
-  if (role === 'manager' && !managerAuthenticated) {
+  const privilegedRole = role === 'manager' || role === 'owner';
+  const privilegedAuthenticated =
+    (role === 'manager' && managerAuthenticated) ||
+    (role === 'owner' && ownerAuthenticated);
+
+  if (privilegedRole && !privilegedAuthenticated) {
     return <RoleSelector />;
   }
 

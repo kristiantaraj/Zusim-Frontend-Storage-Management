@@ -140,6 +140,9 @@ VITE_API_BASE_URL="https://your-backend-domain.com"
 
 # Required to unlock Manager role in Role Selector
 VITE_MANAGER_PASSWORD="change-me"
+
+# Required to unlock Owner role in Role Selector
+VITE_OWNER_PASSWORD="change-me-owner"
 ```
 
 ---
@@ -192,6 +195,7 @@ One-time setup in GitHub repository settings:
     - `ORACLE_SSH_KEY` = private key contents used for SSH (full key text)
     - `ORACLE_PORT` = `22` (optional but recommended)
     - `VITE_MANAGER_PASSWORD` = manager login password for frontend builds
+    - `VITE_OWNER_PASSWORD` = owner login password for frontend builds
 
 One-time setup on the Oracle VM:
 
