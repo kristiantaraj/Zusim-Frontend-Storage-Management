@@ -3,19 +3,24 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 
 const MAX_HISTORY = 20;
+const MANUAL_PREFIX = 'HP-2026-';
 
 function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false, manual = false }) {
   const { t } = useTranslation();
   const inputRef = useRef(null);
   const autoSubmitTimerRef = useRef(null);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(manual ? MANUAL_PREFIX : '');
   const [scanning, setScanning] = useState(false);
   const [history, setHistory] = useState([]); // { id, unitId, type, message, time }
 
-  // Auto-focus on mount and whenever history updates
+  // Auto-focus on mount and whenever history updates; keep cursor after the fixed prefix
   useEffect(() => {
     inputRef.current?.focus();
-  }, [history]);
+    if (manual && inputRef.current) {
+      const len = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(len, len);
+    }
+  }, [history, manual]);
 
   const addHistory = useCallback((unitId, type, message) => {
     setHistory((prev) => [
@@ -35,8 +40,8 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false, manu
 
   const submitScan = useCallback(async (rawValue) => {
     const unitId = String(rawValue || '').replace(/[\r\n]+/g, '').trim();
-    setValue('');
-    if (!unitId || scanning) return;
+    setValue(manual ? MANUAL_PREFIX : '');
+    if (!unitId || (manual && unitId === MANUAL_PREFIX) || scanning) return;
 
     setScanning(true);
     try {
@@ -62,7 +67,7 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false, manu
       setScanning(false);
       inputRef.current?.focus();
     }
-  }, [addHistory, foreman?.id, mode, project?.id, returnUsed, scanning, t]);
+  }, [addHistory, foreman?.id, manual, mode, project?.id, returnUsed, scanning, t]);
 
   const handleKeyDown = async (e) => {
     if (e.key !== 'Enter') return;
@@ -73,9 +78,16 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false, manu
 
   const handleChange = (e) => {
     const nextValue = e.target.value;
+
+    if (manual) {
+      // Keep the fixed prefix intact; operator only edits the trailing digits.
+      setValue(nextValue.startsWith(MANUAL_PREFIX) ? nextValue : MANUAL_PREFIX);
+      return;
+    }
+
     setValue(nextValue);
 
-    if (manual || !autoSubmit || scanning) return;
+    if (!autoSubmit || scanning) return;
 
     if (autoSubmitTimerRef.current) {
       clearTimeout(autoSubmitTimerRef.current);
@@ -129,7 +141,7 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false, manu
         <button
           type="button"
           className="btn btn-primary scan-manual-return-btn"
-          disabled={scanning || !value.trim()}
+          disabled={scanning || value.trim() === MANUAL_PREFIX}
           onClick={() => submitScan(value)}
         >
           {t('scan.returnButton')}
