@@ -4,7 +4,7 @@ import { api } from '../api';
 
 const MAX_HISTORY = 20;
 
-function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
+function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false, manual = false }) {
   const { t } = useTranslation();
   const inputRef = useRef(null);
   const autoSubmitTimerRef = useRef(null);
@@ -67,6 +67,7 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
   const handleKeyDown = async (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
+    if (manual) return;
     await submitScan(value);
   };
 
@@ -74,7 +75,7 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
     const nextValue = e.target.value;
     setValue(nextValue);
 
-    if (!autoSubmit || scanning) return;
+    if (manual || !autoSubmit || scanning) return;
 
     if (autoSubmitTimerRef.current) {
       clearTimeout(autoSubmitTimerRef.current);
@@ -95,7 +96,7 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
         {mode === 'out'
           ? '📤 ' + t('nav.scanOut')
           : returnUsed
-            ? '🗑 ' + t('scan.titleUsed')
+            ? (manual ? '✋ ' + t('scan.titleUsedManual') : '🗑 ' + t('scan.titleUsed'))
             : '↩ ' + t('scan.titleIn')}
       </h1>
       {foreman?.name && (
@@ -109,7 +110,7 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
         </p>
       )}
       <p className="text-muted scan-instruction">
-        {t('scan.scanLabel')}
+        {manual ? t('scan.manualLabel') : t('scan.scanLabel')}
       </p>
 
       <input
@@ -123,6 +124,17 @@ function ScanPage({ mode, foreman, project, returnUsed, autoSubmit = false }) {
         autoComplete="off"
         spellCheck={false}
       />
+
+      {manual && (
+        <button
+          type="button"
+          className="btn btn-primary scan-manual-return-btn"
+          disabled={scanning || !value.trim()}
+          onClick={() => submitScan(value)}
+        >
+          {t('scan.returnButton')}
+        </button>
+      )}
 
       {scanning && (
         <p className="text-muted scan-processing">
@@ -161,6 +173,6 @@ export function ScanIn({ foreman, autoSubmit = false }) {
   return <ScanPage mode="in" foreman={foreman} returnUsed={false} autoSubmit={autoSubmit} />;
 }
 
-export function ScanUsed({ foreman, autoSubmit = false }) {
-  return <ScanPage mode="in" foreman={foreman} returnUsed={true} autoSubmit={autoSubmit} />;
+export function ScanUsed({ foreman, autoSubmit = false, manual = false }) {
+  return <ScanPage mode="in" foreman={foreman} returnUsed={true} autoSubmit={autoSubmit} manual={manual} />;
 }

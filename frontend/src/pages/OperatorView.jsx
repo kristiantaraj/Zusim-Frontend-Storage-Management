@@ -37,7 +37,7 @@ export default function OperatorView() {
 
   // Derived step
   const step = !mode ? 'mode'
-    : mode === 'in' ? 'scan'
+    : mode === 'in' || mode === 'inManual' ? 'scan'
     : !selectedForeman ? 'foreman'
     : mode === 'out' && !selectedProject ? 'project'
     : 'scan';
@@ -87,6 +87,14 @@ export default function OperatorView() {
               >
                 <span className="foreman-tile-icon">🗑</span>
                 <span className="foreman-tile-name">{t('operator.modeIn')}</span>
+              </button>
+              <button
+                type="button"
+                className="foreman-tile operator-mode-tile"
+                onClick={() => setMode('inManual')}
+              >
+                <span className="foreman-tile-icon">✋</span>
+                <span className="foreman-tile-name">{t('operator.modeInManual')}</span>
               </button>
             </div>
           </div>
@@ -196,7 +204,9 @@ export default function OperatorView() {
 
             {mode === 'out'
               ? <ScanOut foreman={selectedForeman} project={selectedProject} autoSubmit={true} />
-              : <ScanUsed autoSubmit={true} />
+              : mode === 'inManual'
+                ? <ScanUsed autoSubmit={false} manual={true} />
+                : <ScanUsed autoSubmit={true} />
             }
           </>
         )}

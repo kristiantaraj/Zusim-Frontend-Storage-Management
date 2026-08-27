@@ -706,7 +706,7 @@ tr:hover td { background: #f7f9fd; }
 
 .operator-mode-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem;
 }
 
@@ -716,6 +716,11 @@ tr:hover td { background: #f7f9fd; }
 
 .operator-mode-tile .foreman-tile-icon {
   font-size: 1.9rem;
+}
+
+.scan-manual-return-btn {
+  margin-top: 0.75rem;
+  width: 100%;
 }
 
 .operator-step-header {
