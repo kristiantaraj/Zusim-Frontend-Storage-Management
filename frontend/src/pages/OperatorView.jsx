@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRole } from '../context/RoleContext';
 import { useNavigate } from 'react-router-dom';
-import { ScanOut, ScanUsed } from './ScanPage';
+import { ScanOut, ScanUsed, ScanCheck } from './ScanPage';
 import { api } from '../api';
 import logo from '../../zusim_logo_white.svg';
 
@@ -15,7 +15,7 @@ export default function OperatorView() {
   const [loading, setLoading] = useState(true);
 
   // Step state: null → 'mode' → ('foreman' → 'project' if OUT) → 'scan'
-  const [mode, setMode] = useState(null);           // 'out' | 'in'
+  const [mode, setMode] = useState(null);           // 'out' | 'outManual' | 'in' | 'inManual' | 'check'
   const [selectedForeman, setSelectedForeman] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
@@ -37,9 +37,9 @@ export default function OperatorView() {
 
   // Derived step
   const step = !mode ? 'mode'
-    : mode === 'in' || mode === 'inManual' ? 'scan'
+    : (mode === 'in' || mode === 'inManual' || mode === 'check') ? 'scan'
     : !selectedForeman ? 'foreman'
-    : mode === 'out' && !selectedProject ? 'project'
+    : (mode === 'out' || mode === 'outManual') && !selectedProject ? 'project'
     : 'scan';
 
   return (
@@ -83,6 +83,14 @@ export default function OperatorView() {
               <button
                 type="button"
                 className="foreman-tile operator-mode-tile"
+                onClick={() => setMode('outManual')}
+              >
+                <span className="foreman-tile-icon">📤✋</span>
+                <span className="foreman-tile-name">{t('operator.modeOutManual')}</span>
+              </button>
+              <button
+                type="button"
+                className="foreman-tile operator-mode-tile"
                 onClick={() => setMode('in')}
               >
                 <span className="foreman-tile-icon">🗑</span>
@@ -95,6 +103,14 @@ export default function OperatorView() {
               >
                 <span className="foreman-tile-icon">✋</span>
                 <span className="foreman-tile-name">{t('operator.modeInManual')}</span>
+              </button>
+              <button
+                type="button"
+                className="foreman-tile operator-mode-tile"
+                onClick={() => setMode('check')}
+              >
+                <span className="foreman-tile-icon">🔍</span>
+                <span className="foreman-tile-name">{t('operator.modeCheck')}</span>
               </button>
             </div>
           </div>
@@ -177,20 +193,23 @@ export default function OperatorView() {
             <div className="card operator-step-card operator-scan-card">
               <div className="operator-scan-meta">
                 <div>
-                  {mode === 'out' && (
-                    <div><strong>{t('foremen.activeForeman')}:</strong> {selectedForeman.icon || '👷'} {selectedForeman.name}</div>
+                  {(mode === 'out' || mode === 'outManual') && (
+                    <div><strong>{t('foremen.activeForeman')}:</strong> {selectedForeman?.icon || '👷'} {selectedForeman?.name}</div>
                   )}
-                  {mode === 'out' && (
-                    <div className="operator-step-note"><strong>{t('projects.activeProject')}:</strong> 📁 {selectedProject.name}</div>
+                  {(mode === 'out' || mode === 'outManual') && (
+                    <div className="operator-step-note"><strong>{t('projects.activeProject')}:</strong> 📁 {selectedProject?.name}</div>
+                  )}
+                  {mode === 'check' && (
+                    <div><strong>{t('operator.modeCheck')}</strong></div>
                   )}
                 </div>
                 <div className="operator-scan-actions">
-                  {mode === 'out' && (
+                  {(mode === 'out' || mode === 'outManual') && (
                     <button className="btn btn-ghost" type="button" onClick={resetProject}>
                       {t('operator.changeProject')}
                     </button>
                   )}
-                  {mode === 'out' && (
+                  {(mode === 'out' || mode === 'outManual') && (
                     <button className="btn btn-ghost" type="button" onClick={resetForeman}>
                       {t('operator.changeForeman')}
                     </button>
@@ -202,12 +221,17 @@ export default function OperatorView() {
               </div>
             </div>
 
-            {mode === 'out'
-              ? <ScanOut foreman={selectedForeman} project={selectedProject} autoSubmit={true} />
-              : mode === 'inManual'
-                ? <ScanUsed autoSubmit={false} manual={true} />
-                : <ScanUsed autoSubmit={true} />
-            }
+            {mode === 'out' ? (
+              <ScanOut foreman={selectedForeman} project={selectedProject} autoSubmit={true} />
+            ) : mode === 'outManual' ? (
+              <ScanOut foreman={selectedForeman} project={selectedProject} autoSubmit={false} manual={true} />
+            ) : mode === 'inManual' ? (
+              <ScanUsed autoSubmit={false} manual={true} />
+            ) : mode === 'check' ? (
+              <ScanCheck />
+            ) : (
+              <ScanUsed autoSubmit={true} />
+            )}
           </>
         )}
 

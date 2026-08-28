@@ -120,6 +120,7 @@ export const api = {
     ).toString();
     return request('GET', `/units${qs ? `?${qs}` : ''}`);
   },
+  getUnit: (id) => request('GET', `/units/${encodeURIComponent(id)}`),
   exportUnitsCsv: (params = {}) => {
     const qs = new URLSearchParams(
       Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''))
