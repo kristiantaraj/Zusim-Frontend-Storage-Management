@@ -27,7 +27,14 @@ export default function Inbound() {
   const [step, setStep] = useState(1); // 1: select product, 2: generate, 3: print
 
   useEffect(() => {
-    api.getProducts().then(setProducts).catch(() => {});
+    const fetchProducts = () => api.getProducts().then(setProducts).catch(() => {});
+    fetchProducts();
+    window.addEventListener('focus', fetchProducts);
+    window.addEventListener('visibilitychange', fetchProducts);
+    return () => {
+      window.removeEventListener('focus', fetchProducts);
+      window.removeEventListener('visibilitychange', fetchProducts);
+    };
   }, []);
 
   useEffect(() => {

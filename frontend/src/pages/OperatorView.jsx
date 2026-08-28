@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRole } from '../context/RoleContext';
 import { useNavigate } from 'react-router-dom';
@@ -19,12 +19,23 @@ export default function OperatorView() {
   const [selectedForeman, setSelectedForeman] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
-  useEffect(() => {
+  const loadOptions = useCallback(() => {
     Promise.all([api.getForemen(), api.getProjects()])
       .then(([f, p]) => { setForemen(f); setProjects(p); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadOptions();
+    const handleFocus = () => loadOptions();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [loadOptions]);
 
   const handleLogout = () => { logout(); navigate('/'); };
   const toggleLanguage = () => {
@@ -41,6 +52,12 @@ export default function OperatorView() {
     : !selectedForeman ? 'foreman'
     : (mode === 'out' || mode === 'outManual') && !selectedProject ? 'project'
     : 'scan';
+
+  useEffect(() => {
+    if (step === 'mode' || step === 'foreman' || step === 'project') {
+      loadOptions();
+    }
+  }, [step, loadOptions]);
 
   return (
     <div className="operator-view">

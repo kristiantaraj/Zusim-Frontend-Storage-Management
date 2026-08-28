@@ -73,14 +73,23 @@ export default function Units() {
   };
 
   useEffect(() => {
-    Promise.all([api.getProducts(), api.getForemen(), api.getProjects()])
-      .then(([p, f, pr]) => {
-        setProducts(p);
-        setForemen(f);
-        setProjects(pr);
-      })
-      .catch(() => {});
-    loadPrintJobs();
+    const fetchOptions = () => {
+      Promise.all([api.getProducts(), api.getForemen(), api.getProjects()])
+        .then(([p, f, pr]) => {
+          setProducts(p);
+          setForemen(f);
+          setProjects(pr);
+        })
+        .catch(() => {});
+      loadPrintJobs();
+    };
+    fetchOptions();
+    window.addEventListener('focus', fetchOptions);
+    window.addEventListener('visibilitychange', fetchOptions);
+    return () => {
+      window.removeEventListener('focus', fetchOptions);
+      window.removeEventListener('visibilitychange', fetchOptions);
+    };
   }, []);
 
   useEffect(() => {
