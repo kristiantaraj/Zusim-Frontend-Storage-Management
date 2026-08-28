@@ -456,11 +456,34 @@ router.get('/:id', async (req, res) => {
       include: {
         product: true,
         batch: true,
-        scan_events: { orderBy: { scanned_at: 'desc' }, take: 10 },
+        ticket_units: {
+          where: { ticket: { status: 'OPEN' } },
+          include: {
+            ticket: {
+              select: {
+                id: true,
+                foreman: { select: { id: true, name: true, icon: true } },
+                project: { select: { id: true, name: true } },
+              },
+            },
+          },
+          take: 1,
+        },
+        scan_events: {
+          orderBy: { scanned_at: 'desc' },
+          take: 10,
+          include: { foreman: { select: { name: true } } },
+        },
       },
     });
-    if (!unit) return res.status(404).json({ error: 'Unit not found.' });
-    res.json(unit);
+    if (!unit) return res.status(404).json({ error: 'Unit not found.', code: 'UNIT_NOT_FOUND' });
+
+    const openTicket = unit.ticket_units?.[0]?.ticket || null;
+
+    res.json({
+      ...unit,
+      open_ticket: openTicket,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch unit.' });
